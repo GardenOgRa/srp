@@ -45,6 +45,8 @@ nav a.ico{background:#fff;color:var(--black);padding:8px 11px;border-radius:2px}
   repeating-linear-gradient(115deg,#2c3527 0 60px,#37402f 60px 120px,#242c1f 120px 180px);
   color:#fff;padding:110px 0 120px}
 .hero .kicker{font-family:'Barlow Condensed';font-style:italic;font-weight:600;font-size:clamp(22px,3vw,34px);color:var(--yellow);text-transform:uppercase}
+.hero .hero-title{margin:0;font-weight:inherit;font-style:normal;letter-spacing:0}
+.hero .hero-title .kicker,.hero .hero-title .disp{display:block}
 .hero .disp{font-size:clamp(44px,7vw,86px);color:transparent;-webkit-text-stroke:2px var(--yellow);text-transform:uppercase}
 .hero .disp .solid{color:var(--yellow);-webkit-text-stroke:0}
 .hero p{max-width:560px;margin:22px 0 30px}
@@ -130,7 +132,7 @@ table.specs td,table.specs th{border-bottom:1px solid var(--line);padding-top:10
 .form-ok p{color:var(--muted);font-size:15px}
 
 /* meldunek — dziennik wdrożeń */
-.meldunek{background:var(--black);color:#e6e6e6;padding:26px 30px;margin-top:32px;max-width:860px;border-left:6px solid var(--yellow)}
+.meldunek{background:var(--black);color:#e6e6e6;padding:26px 30px;margin-top:32px;max-width:860px;border-left:6px solid var(--yellow);scroll-margin-top:96px}
 .m-head{font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:22px;color:var(--yellow);letter-spacing:1px;display:flex;align-items:center;gap:10px}
 .m-dot{width:10px;height:10px;border-radius:50%;background:#3ddc55;box-shadow:0 0 8px #3ddc55;animation:puls 1.6s infinite}
 @keyframes puls{50%{opacity:.35}}

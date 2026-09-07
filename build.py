@@ -418,6 +418,9 @@ ARTICLES = [
     {
         "slug": "jak-wybrac-manekin-ratowniczy",
         "title": "Jak wybrać manekin ratowniczy? Przewodnik dla jednostek i ośrodków",
+        "seo_title": "Jak wybrać manekin ratowniczy? Przewodnik",
+        "desc": "Pięć pytań przed zakupem manekina ratowniczego: scenariusze, masa, środowisko (woda, ogień), "
+                "trwałość i akcesoria. Przewodnik dla jednostek i ośrodków.",
         "lead": "Zakup manekina to inwestycja na lata intensywnej eksploatacji. Oto pięć pytań, które warto sobie zadać przed wyborem modelu — zanim porównacie ceny.",
         "body": """
 <h3>1. Do jakich scenariuszy będzie służył?</h3>
@@ -448,6 +451,9 @@ modeli</a> albo <a href="../zapytanie-ofertowe.html">umów bezpłatny pokaz</a> 
     {
         "slug": "scenariusze-cwiczen-z-manekinem",
         "title": "6 scenariuszy ćwiczeń, które wyciągną maksimum z manekina ratowniczego",
+        "seo_title": "6 scenariuszy ćwiczeń z manekinem ratowniczym",
+        "desc": "Sześć scenariuszy ćwiczeń z manekinem ratowniczym: przeszukiwanie z termowizją, ewakuacja "
+                "z wysokości, wypadek drogowy, RKO, kąpielisko i wypadek masowy.",
         "lead": "Manekin to nie rekwizyt do przenoszenia z punktu A do B. Dobrze zaprojektowany scenariusz zmienia go w pełnoprawnego „poszkodowanego”. Sześć sprawdzonych pomysłów.",
         "body": """
 <h3>1. Przeszukiwanie w zerowej widoczności z termowizją</h3>
@@ -478,6 +484,9 @@ u Was</a> — z naszym sprzętem i instruktorami.</p>
     {
         "slug": "kontrola-krwotokow-stop-the-bleed",
         "title": "Kontrola krwotoków: dlaczego „Stop the Bleed” powinno być standardem, nie dodatkiem",
+        "seo_title": "Stop the Bleed: kontrola krwotoków w szkoleniu",
+        "desc": "Dlaczego kontrola krwotoków powinna być standardem szkoleń: ucisk, opatrunek, staza, packing "
+                "rany. Jak zorganizować kurs Stop the Bleed z symulatorami ran.",
         "lead": "Masywny krwotok potrafi zabić w kilka minut — zanim na miejsce dotrze zespół ratownictwa medycznego. Umiejętność jego zatrzymania to najbardziej „opłacalna” kompetencja pierwszej pomocy.",
         "body": """
 <h3>Trzy techniki, które ratują życie</h3>
@@ -574,7 +583,44 @@ def pic(prefix, label, cls="ph", depth=0, thumb=False):
     return placeholder(label, cls)
 
 DESC_DOMYSLNY = ("Szwedzkie manekiny ratownicze i symulatory ran SRP — wyłączny dystrybutor w Polsce. "
-                 "Realistyczny sprzęt treningowy dla straży pożarnej, wojska, ratownictwa medycznego i wodnego.")
+                 "Sprzęt treningowy dla straży pożarnej, wojska, ratownictwa medycznego i wodnego.")
+
+# Unikalne opisy meta (do 160 znaków) dla stron, które nie przekazują własnego opisu do head().
+# Podstawiane w seo_postprocess() po ścieżce pliku — dzięki temu nie trzeba ruszać każdej funkcji strony.
+SEO_OPISY = {
+    "index.html": "Manekiny ratownicze i symulatory ran SRP ze Szwecji. Wyłączny dystrybutor w Polsce: "
+                  "sprzedaż, pokazy, serwis i szkolenia dla straży, wojska i ratownictwa.",
+    "produkty/index.html": "Katalog manekinów ratowniczych SRP: modele Standard, PRO, RKO, wodne i ogniowe "
+                           "oraz symulatory ran. Parametry, masy, zastosowania i wycena.",
+    "dla-kogo.html": "Dobór manekinów treningowych dla straży pożarnej, wojska, ratownictwa medycznego "
+                     "i wodnego, szpitali i ośrodków szkoleniowych. Polecane modele SRP.",
+    "porownanie-manekinow.html": "Porównanie manekinów ratowniczych SRP: masa, materiał, funkcje RKO, praca "
+                                 "w wodzie i ogniu. Tabela pomaga wybrać model do Waszych ćwiczeń.",
+    "zamowienia-publiczne.html": "Manekiny ratownicze w zamówieniach publicznych: opis przedmiotu zamówienia, "
+                                 "kody CPV i NATO, certyfikaty oraz wsparcie w postępowaniu.",
+    "do-pobrania.html": "Karty katalogowe, certyfikaty i materiały informacyjne o manekinach ratowniczych "
+                        "i symulatorach ran SRP do pobrania.",
+    "faq.html": "Najczęstsze pytania o zakup manekinów ratowniczych SRP: ceny, czas dostawy, gwarancja, "
+                "serwis, masy niestandardowe i pokazy sprzętu.",
+    "wiedza/index.html": "Strefa wiedzy SRP Polska: jak wybrać manekin ratowniczy, scenariusze ćwiczeń, "
+                         "kontrola krwotoków. Artykuły dla instruktorów i jednostek.",
+    "szkolenia.html": "Szkolenia RKO, pierwszej pomocy, Stop the Bleed i TECC z użyciem manekinów "
+                      "i symulatorów ran SRP. Certyfikowani instruktorzy, zajęcia u klienta.",
+    "warunki-zakupu.html": "Warunki zakupu sprzętu SRP: zamówienie, płatność, czas i koszt dostawy, "
+                           "gwarancja i serwis w Polsce. Informacje dla firm i instytucji.",
+    "zapytanie-ofertowe.html": "Zapytanie ofertowe na manekiny ratownicze, symulatory ran i szkolenia SRP. "
+                               "Umów bezpłatny pokaz sprzętu. Odpowiadamy w jeden dzień roboczy.",
+    "o-nas.html": "SRP Polska (TURBOMEDIC Sp. z o.o.) — wyłączny dystrybutor szwedzkich manekinów "
+                  "ratowniczych SRP. Doradztwo, sprzedaż, serwis i szkolenia w całej Polsce.",
+    "aktualnosci.html": "Aktualności SRP Polska: wdrożenia manekinów ratowniczych, szkolenia, pokazy "
+                        "i nowości w ofercie szwedzkiego producenta SRP.",
+    "kontakt.html": "Kontakt z SRP Polska: telefon +48 660 408 679, e-mail kontakt@srp-polska.pl. "
+                    "Wyłączny dystrybutor manekinów ratowniczych SRP, Wrocław.",
+    "polityka-prywatnosci.html": "Polityka prywatności serwisu srp-polska.pl: administrator danych, cele "
+                                 "i podstawy przetwarzania, prawa osób, brak plików cookie.",
+    "404.html": "Strona nie istnieje. Przejdź do katalogu manekinów ratowniczych SRP lub na stronę "
+                "główną SRP Polska.",
+}
 
 def head(title, depth=0, desc=None):
     p = "../" * depth
@@ -679,12 +725,42 @@ def footer(depth=0):
 def btn(href, label):
     return f'<a class="btn" href="{href}">{esc(label)} <span class="arr">→</span></a>'
 
+def seo_postprocess(path, html_out):
+    """Adres kanoniczny, og:url, unikalny opis meta wg SEO_OPISY, noindex dla strony 404."""
+    url = BASE_URL + "/" + ("" if path == "index.html" else path)
+    if path == "404.html":
+        extra = '<meta name="robots" content="noindex">\n'
+    else:
+        extra = f'<link rel="canonical" href="{url}">\n<meta property="og:url" content="{url}">\n'
+    html_out = html_out.replace("</head>", extra + "</head>", 1)
+    d = SEO_OPISY.get(path)
+    if d:
+        d = esc(" ".join(d.split()))
+        html_out = _re.sub(r'(<meta name="description" content=")[^"]*(")',
+                           lambda m: m.group(1) + d + m.group(2), html_out, count=1)
+        html_out = _re.sub(r'(<meta property="og:description" content=")[^"]*(")',
+                           lambda m: m.group(1) + d + m.group(2), html_out, count=1)
+    return html_out
+
 def write(path, content):
+    if path.endswith(".html"):
+        content = seo_postprocess(path, content)
     full = os.path.join(ROOT, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
     with open(full, "w", encoding="utf-8") as f:
         f.write(content)
     print("✓", path)
+
+def render_meldunek_pusty():
+    """Meldunek bez wpisów — kotwica #meldunek musi istnieć, bo linkuje do niej nawigacja i stopka.
+    Zero danych przykładowych: uczciwa informacja, kiedy pojawią się wpisy."""
+    return '''
+    <div class="meldunek" id="meldunek">
+      <div class="m-head"><span class="m-dot"></span> MELDUNEK: FANTOMY W SŁUŻBIE</div>
+      <div class="m-foot">Dziennik dostaw w Polsce. Wpisy publikujemy po każdej dostawie i wyłącznie za zgodą jednostki
+      — bez nazw własnych, z modelem, typem odbiorcy i regionem. Referencje udostępniamy na życzenie:
+      <a href="kontakt.html" style="color:#e6e6e6">napisz do nas</a>.</div>
+    </div>'''
 
 def render_meldunek(deps):
     """sekcja „Meldunek: fantomy w służbie” — licznik + karuzela wpisów"""
@@ -802,6 +878,8 @@ nav a.ico{background:#fff;color:var(--black);padding:8px 11px;border-radius:2px}
   repeating-linear-gradient(115deg,#2c3527 0 60px,#37402f 60px 120px,#242c1f 120px 180px);
   color:#fff;padding:110px 0 120px}
 .hero .kicker{font-family:'Barlow Condensed';font-style:italic;font-weight:600;font-size:clamp(22px,3vw,34px);color:var(--yellow);text-transform:uppercase}
+.hero .hero-title{margin:0;font-weight:inherit;font-style:normal;letter-spacing:0}
+.hero .hero-title .kicker,.hero .hero-title .disp{display:block}
 .hero .disp{font-size:clamp(44px,7vw,86px);color:transparent;-webkit-text-stroke:2px var(--yellow);text-transform:uppercase}
 .hero .disp .solid{color:var(--yellow);-webkit-text-stroke:0}
 .hero p{max-width:560px;margin:22px 0 30px}
@@ -887,7 +965,7 @@ table.specs td,table.specs th{border-bottom:1px solid var(--line);padding-top:10
 .form-ok p{color:var(--muted);font-size:15px}
 
 /* meldunek — dziennik wdrożeń */
-.meldunek{background:var(--black);color:#e6e6e6;padding:26px 30px;margin-top:32px;max-width:860px;border-left:6px solid var(--yellow)}
+.meldunek{background:var(--black);color:#e6e6e6;padding:26px 30px;margin-top:32px;max-width:860px;border-left:6px solid var(--yellow);scroll-margin-top:96px}
 .m-head{font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:22px;color:var(--yellow);letter-spacing:1px;display:flex;align-items:center;gap:10px}
 .m-dot{width:10px;height:10px;border-radius:50%;background:#3ddc55;box-shadow:0 0 8px #3ddc55;animation:puls 1.6s infinite}
 @keyframes puls{50%{opacity:.35}}
@@ -1015,7 +1093,8 @@ def page_home():
         for s in SEGMENTS
     )
     faqs = "\n".join(f'<details class="faq"><summary>{esc(q)}</summary><p>{esc(a)}</p></details>' for q, a in FAQS[:4])
-    deploys_html = render_meldunek(DEPLOYMENTS) if DEPLOYMENTS else ""
+    # kotwica #meldunek zawsze istnieje (nawigacja i stopka do niej linkują) — bez wpisów pokazujemy uczciwy stan pusty
+    deploys_html = render_meldunek(DEPLOYMENTS) if DEPLOYMENTS else render_meldunek_pusty()
     if TESTIMONIALS:
         quotes = ('<div class="grid3" style="margin-top:36px">' + "\n".join(
             f'<div class="quote"><p>„{esc(t)}”</p><div class="who">{esc(n)}<span>{esc(o)}</span></div></div>'
@@ -1029,7 +1108,7 @@ def page_home():
       przetestuj sprzęt w swoich procedurach — a jeśli spełni oczekiwania, Twoja opinia pojawi się
       w tym miejscu.</p>
       <a class="btn solid" href="zapytanie-ofertowe.html">Umów pokaz i przetestuj <span class="arr">→</span></a>
-    </div>"""
+    </div>""" + deploys_html
     hero_bg = ('style="background-image:linear-gradient(rgba(10,12,8,.55),rgba(10,12,8,.7)),'
                "url('img/home-01.jpg');background-size:cover;background-position:center\"") if main_image("home") else ""
     org_ld = json.dumps({
@@ -1048,8 +1127,8 @@ def page_home():
 <script type="application/ld+json">{org_ld}</script>
 <div class="hero" {hero_bg}>
   <div class="wrap">
-    <div class="kicker">Przenieś swój trening ratowniczy</div>
-    <div class="disp">na wyższy<br><span class="solid">poziom</span></div>
+    <h1 class="hero-title"><span class="kicker">Przenieś swój trening ratowniczy</span>
+    <span class="disp">na wyższy<br><span class="solid">poziom</span></span></h1>
     <p>Szukasz sprzętu treningowego najwyższej jakości? Jesteśmy wyłącznym dystrybutorem szwedzkich
     manekinów ratowniczych i symulatorów ran SRP w Polsce. Skontaktuj się z nami, aby poznać
     właściwości produktów, ceny i dostępność.</p>
@@ -1624,7 +1703,7 @@ def page_article(a):
   <a href="../zapytanie-ofertowe.html"><strong>Wyślij zapytanie →</strong></a></div>
 </div></section>
 """
-    return head(a["title"], 1, a["lead"]) + body + footer(1)
+    return head(a.get("seo_title", a["title"]), 1, a.get("desc", a["lead"])) + body + footer(1)
 
 def page_privacy():
     body = f"""
