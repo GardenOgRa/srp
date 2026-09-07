@@ -1302,7 +1302,8 @@ def page_product(p):
         f'<video controls preload="metadata"><source src="../img/{f}" type="video/mp4"></video>'
         for f in vids)
     if vids:
-        video_html += '<p class="note">Film produktowy SRP. [Przed publikacją skompresuj plik — oryginał jest bardzo duży.]</p>'
+        # sam podpis — bez uwag roboczych w nawiasach (były widoczne publicznie pod filmem)
+        video_html += '<p class="note">Film produktowy SRP.</p>'
     is_manikin = p["slug"] in {c[0] for c in COMPARE_COLS}
     cmp_link = ('<p class="note" style="margin-top:14px">Nie wiesz, który model wybrać? '
                 '<a href="../porownanie-manekinow.html"><strong>Zobacz porównanie wszystkich manekinów →</strong></a></p>') if is_manikin else ""
@@ -1616,13 +1617,41 @@ codzienność — pomagamy na każdym etapie, od szacowania wartości po dostaw�
 """
     return head("Manekiny ratownicze w przetargach") + body + footer()
 
+PLIKI_DIR = os.path.join(ROOT, "pliki")
+
+# Dokumenty ogólne na stronie „Do pobrania”: (tytuł, baza nazwy pliku w katalogu pliki/)
+DOKUMENTY_DO_POBRANIA = [
+    ("Certyfikat TÜV — manekiny Standard / RKO / bariatryczny", "certyfikat-tuv"),
+    ("Wyniki testów ogniowych EN ISO 6941 / FAR 25.853b", "testy-ogniowe-en-iso-6941"),
+    ("Wykaz numerów NSN / kod NCAGE producenta", "wykaz-nsn-ncage"),
+    ("Instrukcja konserwacji i przechowywania manekinów", "instrukcja-konserwacji"),
+]
+
+def pliki_do_pobrania(baza):
+    """Istniejące pliki dla pozycji: pliki/<baza>-pl.pdf i pliki/<baza>-en.pdf.
+    Zwraca {'pl': 'pliki/…', 'en': 'pliki/…'} wyłącznie dla plików fizycznie obecnych w repozytorium —
+    dzięki temu na stronie nigdy nie ma pustego ani martwego przycisku „Pobierz”."""
+    out = {}
+    for lang in ("pl", "en"):
+        f = f"{baza}-{lang}.pdf"
+        if os.path.exists(os.path.join(PLIKI_DIR, f)):
+            out[lang] = "pliki/" + f
+    return out
+
+def dl_row(tytul, baza):
+    """Wiersz listy pobrań: przycisk tylko dla istniejącego pliku, inaczej uczciwy stan „w przygotowaniu”."""
+    pliki = pliki_do_pobrania(baza)
+    if pliki:
+        meta = "PDF · " + " / ".join(l.upper() for l in pliki)
+        btns = "".join(f'<a class="btn" href="{u}" download>Pobierz ({l.upper()})</a>' for l, u in pliki.items())
+    else:
+        meta = f'W przygotowaniu — wysyłamy na życzenie: <a href="mailto:{EMAIL}">{EMAIL}</a>'
+        btns = ""
+    return f'<div class="dl"><div><strong>{esc(tytul)}</strong><div class="meta">{meta}</div></div>{btns}</div>'
+
 def page_downloads():
-    items = "\n".join(
-        f'<div class="dl"><div><strong>Karta katalogowa — {esc(p["name"])}</strong>'
-        f'<div class="meta">PDF · [do uzupełnienia oficjalnym plikiem]</div></div>'
-        f'<a class="btn" href="#">Pobierz</a></div>'
-        for p in PRODUCTS
-    )
+    items = "\n".join(dl_row(f"Karta katalogowa — {p['name']}", f"karta-{p['slug']}") for p in PRODUCTS)
+    docs = "\n".join(dl_row(t, b) for t, b in DOKUMENTY_DO_POBRANIA)
     body = f"""
 <div class="page-head"><div class="wrap"><h1>Do pobrania</h1>
 <p>Karty katalogowe, certyfikaty i materiały do postępowań — wszystko w jednym miejscu.
@@ -1631,10 +1660,7 @@ Jeśli brakuje dokumentu, którego potrzebujesz, napisz: {EMAIL}.</p></div></div
   <h2>Karty katalogowe produktów</h2>
   {items}
   <h2 style="margin-top:44px">Certyfikaty i dokumenty</h2>
-  <div class="dl"><div><strong>Certyfikat TÜV — manekiny Standard / RKO / bariatryczny</strong><div class="meta">PDF · [do uzupełnienia]</div></div><a class="btn" href="#">Pobierz</a></div>
-  <div class="dl"><div><strong>Wyniki testów ogniowych EN ISO 6941 / FAR 25.853b</strong><div class="meta">PDF · [do uzupełnienia]</div></div><a class="btn" href="#">Pobierz</a></div>
-  <div class="dl"><div><strong>Wykaz numerów NSN / kod NCAGE producenta</strong><div class="meta">PDF · [do uzupełnienia]</div></div><a class="btn" href="#">Pobierz</a></div>
-  <div class="dl"><div><strong>Instrukcja konserwacji i przechowywania manekinów</strong><div class="meta">PDF · [do uzupełnienia]</div></div><a class="btn" href="#">Pobierz</a></div>
+  {docs}
   <h2 style="margin-top:44px">Dla zamawiających (Pzp)</h2>
   <div class="dl"><div><strong>Przykładowe opisy przedmiotu zamówienia (OPZ)</strong><div class="meta">DOCX · udostępniamy na życzenie</div></div><a class="btn" href="zapytanie-ofertowe.html">Napisz do nas</a></div>
 </div></section>
