@@ -1,3 +1,9 @@
 srp-strona-demo*.zip
 .claude/
 .DS_Store
+
+# Dokumenty koordynacyjne i biznesowe — tylko lokalnie, repozytorium jest PUBLICZNE (GitHub Pages)
+srp-polska/
+HANDOFF-CLAUDE.md
+RAPORT-CLAUDE-PRZEJECIE.md
+zlecenia/

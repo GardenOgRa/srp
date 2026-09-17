@@ -30,11 +30,11 @@
       <a href="../wiedza/index.html">Wiedza</a>
       <a href="../o-nas.html">O nas</a>
       <a href="../kontakt.html">Kontakt</a>
-      <a class="nav-cta" href="../zapytanie-ofertowe.html">Umów pokaz / wycena</a>
+      <a class="nav-cta" href="../zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę / wycena</a>
     </nav>
   </div>
 </header>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Product","name":"Manekin do ratownictwa wodnego z funkcją RKO","description":"Umożliwia wdechy ratownicze i uciśnięcia klatki piersiowej bezpośrednio w środowisku wodnym. Realistyczna pozycja pływania.","brand":{"@type":"Brand","name":"SRP"},"manufacturer":{"@type":"Organization","name":"Svenska Räddningsprodukter AB"},"countryOfOrigin":"SE"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Product","name":"Manekin do ratownictwa wodnego z funkcją RKO","description":"Umożliwia wdechy ratownicze i uciśnięcia klatki piersiowej bezpośrednio w środowisku wodnym. Realistyczna pozycja pływania.","brand":{"@type":"Brand","name":"SRP"},"manufacturer":{"@type":"Organization","name":"Svenska Räddningsprodukter AB"},"countryOfOrigin":"SE","offers":{"@type":"AggregateOffer","priceCurrency":"PLN","lowPrice":5804.07,"highPrice":5804.07,"offerCount":1,"seller":{"@type":"Organization","name":"TURBOMEDIC Sp. z o.o."}}}</script>
 <div class="wrap crumbs"><a href="../index.html">Start</a> / <a href="index.html">Produkty</a> / Manekin do ratownictwa wodnego z funkcją RKO</div>
 <section style="padding-top:20px">
   <div class="wrap prod-grid">
@@ -58,8 +58,9 @@
 <tr><th>Materiał</th><td>wzmocnione PVC, podwójne szwy</td></tr>
 <tr><th>Numery</th><td>nr art. 15-9161FH, NATO Stock No 6910-64-000-5406</td></tr></table>
       <div class="usebox"><strong>Zastosowanie:</strong> Ratownictwo wodne powierzchniowe i lodowe, szkolenia ratowników na basenach i kąpieliskach, ćwiczenia dekontaminacji.</div>
-      <a class="btn solid" href="../zapytanie-ofertowe.html">Zapytaj o cenę <span class="arr">→</span></a>
-      &nbsp; <a class="btn" href="../zapytanie-ofertowe.html">Umów bezpłatny pokaz <span class="arr">→</span></a>
+      <div class="cena"><div class="cena-h">Cena katalogowa</div><table class="cena-t"><tr><td>Fantom ratowniczy wodny z funkcją RKO</td><td class="num"><b>5 804,07 zł</b><span class="vat">netto</span></td><td class="num">7 139,00 zł<span class="vat">brutto</span></td><td class="act"><a class="btn mini" href="https://www.sklep.turbomedic.pl/pl/p/Fantom-ratowniczy-wodny-z-funkcja-RKO/75" target="_blank" rel="noopener">Zamów w sklepie</a></td></tr></table><p class="note">Ceny katalogowe wg sklepu Turbomedic, stan na 2026-09-17, VAT 23%. Pakiety ze szkoleniem, przetargi i większe zamówienia wyceniamy indywidualnie — <a href="../zapytanie-ofertowe.html">zapytaj o ofertę</a>. <a href="../cennik.html">Pełny cennik</a>.</p></div>
+      <a class="btn solid" href="../zapytanie-ofertowe.html">Zapytaj o ofertę <span class="arr">→</span></a>
+      &nbsp; <a class="btn" href="../zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę o produkcie <span class="arr">→</span></a>
       
       <p class="note">Do produktu dołączamy: kartę katalogową PDF, dokumenty do postępowań (certyfikaty,
       deklaracje) oraz opcjonalne szkolenie wdrożeniowe — <a href="../do-pobrania.html">zobacz materiały do pobrania</a>.</p>
@@ -84,6 +85,7 @@
     <div>
       <h4>Na skróty</h4>
       <p><a href="../produkty/index.html">Produkty</a><br>
+      <a href="../cennik.html">Cennik</a><br>
       <a href="../porownanie-manekinow.html">Porównanie modeli</a><br>
       <a href="../dla-kogo.html">Rozwiązania dla branż</a><br>
       <a href="../index.html#meldunek">Meldunek: fantomy w służbie</a><br>
@@ -103,6 +105,7 @@
 <script>
 /* wysyłka formularzy do webhooka n8n (bez przeładowania strony) */
 (function(){
+  if(location.search.indexOf('rozmowa=1')>-1){ var d=document.querySelector('input[name=demo]'); if(d){ d.checked=true; var fm=d.closest('form'); if(fm) fm.scrollIntoView({block:'start'}); } }
   document.querySelectorAll('form[data-lead-form="1"]').forEach(function(f){
     f.addEventListener('submit', function(ev){
       ev.preventDefault();
@@ -110,6 +113,8 @@
       if(btn){ btn.disabled=true; btn.innerHTML='Wysyłanie…'; }
       var fd=new FormData(f), data={};
       fd.forEach(function(v,k){ data[k]= data[k] ? [].concat(data[k],v) : v; });
+      if(data.website){ f.innerHTML='<div class="form-ok"><strong>Dziękujemy.</strong></div>'; return; } /* pułapka na boty */
+      delete data.website;
       data._strona=location.pathname; data._czas=new Date().toISOString();
       fetch(f.action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
         .then(function(r){ if(!r.ok) throw 0;

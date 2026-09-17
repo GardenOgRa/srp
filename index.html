@@ -30,7 +30,7 @@
       <a href="wiedza/index.html">Wiedza</a>
       <a href="o-nas.html">O nas</a>
       <a href="kontakt.html">Kontakt</a>
-      <a class="nav-cta" href="zapytanie-ofertowe.html">Umów pokaz / wycena</a>
+      <a class="nav-cta" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę / wycena</a>
     </nav>
   </div>
 </header>
@@ -43,8 +43,8 @@
     <p>Szukasz sprzętu treningowego najwyższej jakości? Jesteśmy wyłącznym dystrybutorem szwedzkich
     manekinów ratowniczych i symulatorów ran SRP w Polsce. Skontaktuj się z nami, aby poznać
     właściwości produktów, ceny i dostępność.</p>
-    <a class="btn solid" href="zapytanie-ofertowe.html">Umów bezpłatny pokaz <span class="arr">→</span></a>
-    &nbsp; <a class="btn" href="porownanie-manekinow.html">Porównaj modele <span class="arr">→</span></a>
+    <a class="btn solid" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę o produkcie <span class="arr">→</span></a>
+    &nbsp; <a class="btn" href="cennik.html">Zobacz cennik <span class="arr">→</span></a>
   </div>
 </div>
 
@@ -150,10 +150,10 @@
     a jego rozwiązania opisywały media branżowe i ogólnokrajowe w Szwecji.</p>
     <div class="refbox">
       <h3>Twoja jednostka może być naszą pierwszą polską referencją</h3>
-      <p>Rozpoczynamy dystrybucję w Polsce i budujemy listę referencyjną. Umów bezpłatny pokaz,
-      przetestuj sprzęt w swoich procedurach — a jeśli spełni oczekiwania, Twoja opinia pojawi się
-      w tym miejscu.</p>
-      <a class="btn solid" href="zapytanie-ofertowe.html">Umów pokaz i przetestuj <span class="arr">→</span></a>
+      <p>Rozpoczynamy dystrybucję w Polsce i budujemy listę referencyjną. Porozmawiaj z nami o swoich
+      scenariuszach ćwiczeń, przetestuj sprzęt w swoich procedurach — a jeśli spełni oczekiwania, Twoja
+      opinia pojawi się w tym miejscu.</p>
+      <a class="btn solid" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę o produkcie <span class="arr">→</span></a>
     </div>
     <div class="meldunek" id="meldunek">
       <div class="m-head"><span class="m-dot"></span> MELDUNEK: FANTOMY W SŁUŻBIE</div>
@@ -186,8 +186,8 @@
     <div class="steps">
       <div class="step"><div class="no">01</div><h3>Konsultacja i dobór</h3>
         <p>Rozmawiamy o Waszych scenariuszach ćwiczeń i budżecie — doradzimy konfigurację zamiast sprzedawać „z katalogu”.</p></div>
-      <div class="step"><div class="no">02</div><h3>Bezpłatny pokaz</h3>
-        <p>Przywozimy sprzęt do Twojej jednostki. Testujesz go na własnych noszach, w swoich procedurach, ze swoim zespołem.</p></div>
+      <div class="step"><div class="no">02</div><h3>Rozmowa o produkcie</h3>
+        <p>30 minut online lub telefonicznie: pokazujemy sprzęt na filmach instruktażowych, odpowiadamy na pytania o Wasze scenariusze. Pokaz na żywo — na zapytanie, gdy egzemplarz demonstracyjny jest dostępny.</p></div>
       <div class="step"><div class="no">03</div><h3>Oferta lub przetarg</h3>
         <p>Przygotowujemy wycenę, dokumentację do zamówień publicznych (OPZ, certyfikaty) i warianty finansowania.</p></div>
       <div class="step"><div class="no">04</div><h3>Dostawa i wdrożenie</h3>
@@ -214,6 +214,7 @@
     <p style="margin:6px 0 18px;max-width:640px">Nowe produkty, terminy szkoleń otwartych i praktyczne
     materiały dla instruktorów — maksymalnie raz w miesiącu, bez spamu.</p>
     <form action="https://n8n.ogrodowiak.pl/webhook/srp-lead" method="post" data-lead-form="1">
+  <div class="hp" aria-hidden="true"><label>Strona www <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
       <input type="email" name="email" placeholder="Twój adres e-mail" required>
       <button class="btn" type="submit">Zapisz się</button>
     <input type="hidden" name="typ" value="newsletter">
@@ -239,6 +240,7 @@
     <div>
       <h4>Na skróty</h4>
       <p><a href="produkty/index.html">Produkty</a><br>
+      <a href="cennik.html">Cennik</a><br>
       <a href="porownanie-manekinow.html">Porównanie modeli</a><br>
       <a href="dla-kogo.html">Rozwiązania dla branż</a><br>
       <a href="index.html#meldunek">Meldunek: fantomy w służbie</a><br>
@@ -258,6 +260,7 @@
 <script>
 /* wysyłka formularzy do webhooka n8n (bez przeładowania strony) */
 (function(){
+  if(location.search.indexOf('rozmowa=1')>-1){ var d=document.querySelector('input[name=demo]'); if(d){ d.checked=true; var fm=d.closest('form'); if(fm) fm.scrollIntoView({block:'start'}); } }
   document.querySelectorAll('form[data-lead-form="1"]').forEach(function(f){
     f.addEventListener('submit', function(ev){
       ev.preventDefault();
@@ -265,6 +268,8 @@
       if(btn){ btn.disabled=true; btn.innerHTML='Wysyłanie…'; }
       var fd=new FormData(f), data={};
       fd.forEach(function(v,k){ data[k]= data[k] ? [].concat(data[k],v) : v; });
+      if(data.website){ f.innerHTML='<div class="form-ok"><strong>Dziękujemy.</strong></div>'; return; } /* pułapka na boty */
+      delete data.website;
       data._strona=location.pathname; data._czas=new Date().toISOString();
       fetch(f.action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
         .then(function(r){ if(!r.ok) throw 0;

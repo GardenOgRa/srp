@@ -30,13 +30,13 @@
       <a href="wiedza/index.html">Wiedza</a>
       <a href="o-nas.html">O nas</a>
       <a href="kontakt.html">Kontakt</a>
-      <a class="nav-cta" href="zapytanie-ofertowe.html">Umów pokaz / wycena</a>
+      <a class="nav-cta" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę / wycena</a>
     </nav>
   </div>
 </header>
 
 <div class="page-head"><div class="wrap"><h1>Polityka prywatności</h1>
-<p>Szkic do weryfikacji prawnej — [uzupełnij dane administratora przed publikacją docelową].</p></div></div>
+<p>Informacja o przetwarzaniu danych osobowych w serwisie srp-polska.pl. Wersja z 2026-09-17.</p></div></div>
 <section><div class="wrap" style="max-width:860px">
   <h3>1. Administrator danych</h3>
   <p>Administratorem Twoich danych osobowych jest:</p>
@@ -53,17 +53,22 @@
   <p>Dane z zapytań przechowujemy przez okres prowadzenia korespondencji i wymagany przepisami
   (np. podatkowymi przy zawarciu umowy). Dane newslettera — do wycofania zgody.</p>
   <h3 style="margin-top:26px">4. Odbiorcy danych</h3>
-  <p>Dane mogą być powierzane podmiotom obsługującym naszą pocztę, hosting i formularze
-  [wymień dostawców po podpięciu, np. operator formularzy] — wyłącznie w zakresie niezbędnym
-  do świadczenia tych usług.</p>
+  <p>Dane powierzamy wyłącznie podmiotom niezbędnym do działania serwisu i obsługi zapytań, w zakresie
+  koniecznym do świadczenia usługi: hosting strony — GitHub, Inc. (GitHub Pages; serwer rejestruje adres IP
+  w logach technicznych), obsługa formularzy i automatyzacja — własna instancja n8n na serwerze w Unii Europejskiej,
+  poczta firmowa — cyber_Folks S.A. (Polska). Powiadomienia o zapytaniach trafiają także na skrzynkę firmową
+  prowadzoną w usłudze Google Workspace/Gmail (Google Ireland Ltd.). Nie sprzedajemy danych i nie przekazujemy ich
+  do celów marketingowych osób trzecich. Zmiana listy odbiorców (np. system CRM, asystent AI na stronie) zostanie
+  odnotowana w tej polityce przed uruchomieniem usługi.</p>
   <h3 style="margin-top:26px">5. Twoje prawa</h3>
   <p>Masz prawo dostępu do danych, ich sprostowania, usunięcia, ograniczenia przetwarzania,
   przenoszenia, sprzeciwu oraz wniesienia skargi do Prezesa UODO. Wycofanie zgody nie wpływa
   na zgodność z prawem wcześniejszego przetwarzania.</p>
   <h3 style="margin-top:26px">6. Pliki cookies</h3>
-  <p>Strona nie używa własnych plików cookies ani narzędzi śledzących. Czcionki ładowane są
-  z Google Fonts (Google LLC może rejestrować adres IP przy pobraniu czcionki). [Zaktualizuj
-  po dodaniu analityki.]</p>
+  <p>Strona nie używa plików cookies ani narzędzi śledzących. Czcionki są serwowane z naszego serwera,
+  bez połączeń z usługami firm trzecich. Filmy produktowe odtwarzamy z własnego serwera, bez osadzania odtwarzaczy
+  zewnętrznych. Jeśli w przyszłości dodamy bezcookie'ową statystykę odwiedzin lub asystenta AI, opiszemy to
+  w tym miejscu przed uruchomieniem.</p>
 </div></section>
 
 <footer>
@@ -83,6 +88,7 @@
     <div>
       <h4>Na skróty</h4>
       <p><a href="produkty/index.html">Produkty</a><br>
+      <a href="cennik.html">Cennik</a><br>
       <a href="porownanie-manekinow.html">Porównanie modeli</a><br>
       <a href="dla-kogo.html">Rozwiązania dla branż</a><br>
       <a href="index.html#meldunek">Meldunek: fantomy w służbie</a><br>
@@ -102,6 +108,7 @@
 <script>
 /* wysyłka formularzy do webhooka n8n (bez przeładowania strony) */
 (function(){
+  if(location.search.indexOf('rozmowa=1')>-1){ var d=document.querySelector('input[name=demo]'); if(d){ d.checked=true; var fm=d.closest('form'); if(fm) fm.scrollIntoView({block:'start'}); } }
   document.querySelectorAll('form[data-lead-form="1"]').forEach(function(f){
     f.addEventListener('submit', function(ev){
       ev.preventDefault();
@@ -109,6 +116,8 @@
       if(btn){ btn.disabled=true; btn.innerHTML='Wysyłanie…'; }
       var fd=new FormData(f), data={};
       fd.forEach(function(v,k){ data[k]= data[k] ? [].concat(data[k],v) : v; });
+      if(data.website){ f.innerHTML='<div class="form-ok"><strong>Dziękujemy.</strong></div>'; return; } /* pułapka na boty */
+      delete data.website;
       data._strona=location.pathname; data._czas=new Date().toISOString();
       fetch(f.action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
         .then(function(r){ if(!r.ok) throw 0;

@@ -88,3 +88,7 @@ ffmpeg -i img/manekin-pro-elite-02.mp4 -vcodec libx264 -crf 28 -preset slow -vf 
 5. **Warunki zakupu** — szkic dostosowany do rynku PL; wymaga weryfikacji prawnej
    (prawo konsumenckie, RODO, polityka prywatności i cookies).
 6. **Domena i hosting** — pliki są statyczne, wgrasz je na dowolny hosting.
+
+## Prowadzenie projektu
+
+[Zasady, sesje i punkt wejścia](../prowadzenie-projektow/SRP/README.md).

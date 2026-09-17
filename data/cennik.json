@@ -1,0 +1,113 @@
+{
+ "_opis": "Ceny katalogowe SRP publikowane na stronie. Źródło: sklep.turbomedic.pl (producent SRP), odczyt ręczny. Edytuj tu — build.py renderuje blok cen na kartach produktów i stronę cennik.html. Ceny zakupu i marże NIGDY tutaj (repozytorium publiczne).",
+ "zrodlo": "https://www.sklep.turbomedic.pl/pl/producer/SRP-Swedish-Rescue-Products/18",
+ "stan_na": "2026-09-17",
+ "waluta": "PLN",
+ "vat_proc": 23,
+ "prog_sklep_netto": 10000,
+ "_prog_opis": "Pozycje z ceną netto poniżej progu dostają przycisk „Zamów w sklepie Turbomedic”; droższe — tylko „Zapytaj o ofertę” (przetargi, pakiety).",
+ "pozycje": [
+  {
+   "slug": "manekin-pro-elite-military",
+   "nazwa": "Fantom wysokiej wierności PRO ELITE MILITARY",
+   "netto": 56991.87,
+   "brutto": 70100.0,
+   "sklep": "https://www.sklep.turbomedic.pl/pl/p/Fantom-wysokiej-wiernosci-PRO-ELITE-MILITARY/69"
+  },
+  {
+   "slug": "manekin-pro-elite",
+   "nazwa": "Fantom wysokiej wierności PRO ELITE",
+   "netto": 48772.36,
+   "brutto": 59990.0,
+   "sklep": "https://www.sklep.turbomedic.pl/pl/p/Fantom-wysokiej-wiernosci-PRO-ELITE/70"
+  },
+  {
+   "slug": "manekin-pro-military",
+   "nazwa": "Rescue Manikin PRO MILITARY",
+   "netto": 20203.25,
+   "brutto": 24850.0,
+   "sklep": "https://www.sklep.turbomedic.pl/pl/p/Fantom-wysokiej-wiernosci-RESCUE-MANNIKIN-PRO-MILITARY-/66"
+  },
+  {
+   "slug": "manekin-pro",
+   "nazwa": "Rescue Manikin PRO",
+   "netto": 9756.1,
+   "brutto": 12000.0,
+   "sklep": "https://www.sklep.turbomedic.pl/pl/p/Fantom-wysokiej-wiernosci-RESCUE-MANNIKIN-PRO/52"
+  },
+  {
+   "slug": "manekin-standard",
+   "nazwa": "Manekin ratowniczy STANDARD — osoba dorosła",
+   "netto": 5039.84,
+   "brutto": 6199.0,
+   "sklep": "https://www.sklep.turbomedic.pl/pl/p/Manekin-ratowniczy-STANDARD-osoba-dorosla/72"
+  },
+  {
+   "slug": "manekin-standard",
+   "nazwa": "Manekin ratowniczy STANDARD — dziecko",
+   "netto": 3528.46,
+   "brutto": 4340.0,
+   "sklep": "https://www.sklep.turbomedic.pl/pl/p/Manekin-ratowniczy-STANDARD-dziecko/73"
+  },
+  {
+   "slug": "manekin-rko",
+   "nazwa": "Manekin ratowniczy z funkcją RKO",
+   "netto": 6601.63,
+   "brutto": 8120.0,
+   "sklep": "https://www.sklep.turbomedic.pl/pl/p/Manekin-ratowniczy-z-funkcja-RKO/74"
+  },
+  {
+   "slug": "manekin-wodny-rko",
+   "nazwa": "Fantom ratowniczy wodny z funkcją RKO",
+   "netto": 5804.07,
+   "brutto": 7139.0,
+   "sklep": "https://www.sklep.turbomedic.pl/pl/p/Fantom-ratowniczy-wodny-z-funkcja-RKO/75"
+  },
+  {
+   "slug": "manekin-bariatryczny",
+   "nazwa": "Manekin osoby otyłej (bariatryczny)",
+   "netto": 12113.82,
+   "brutto": 14900.0,
+   "sklep": "https://www.sklep.turbomedic.pl/pl/p/Manekin-osoby-otylej/76"
+  },
+  {
+   "slug": "manekiny-pozarowe",
+   "nazwa": "Manekin pożarowy",
+   "netto": 2064.23,
+   "brutto": 2539.0,
+   "sklep": "https://www.sklep.turbomedic.pl/pl/p/Manekin-pozarowy/71"
+  },
+  {
+   "slug": "symulatory-ran",
+   "nazwa": "Trenażer pakowania rany „GUNSHOT WOUND”",
+   "netto": 1991.87,
+   "brutto": 2450.0,
+   "sklep": "https://www.sklep.turbomedic.pl/pl/p/Trenazer-pakowania-rany-GUNSHOT-WOUND/50"
+  },
+  {
+   "slug": "symulatory-ran",
+   "nazwa": "Trenażer pakowania rany „KNIFE STAB WOUND”",
+   "netto": 1991.87,
+   "brutto": 2450.0,
+   "sklep": "https://www.sklep.turbomedic.pl/pl/p/Trenazer-pakowania-rany-KNIFE-STAB-WOUND/51"
+  },
+  {
+   "slug": "pozostale-produkty",
+   "nazwa": "Krew symulacyjna SRP, 1 litr",
+   "netto": 260.16,
+   "brutto": 320.0,
+   "sklep": "https://www.sklep.turbomedic.pl/pl/p/Krew-symulacyjna-SRP-1-litr/67"
+  },
+  {
+   "slug": "pozostale-produkty",
+   "nazwa": "Krew symulacyjna SRP RealScent Trauma, 1 litr",
+   "netto": 317.07,
+   "brutto": 390.0,
+   "sklep": "https://www.sklep.turbomedic.pl/pl/p/Krew-symulacyjna-SRP-RealScent-Trauma-1-litr-/68"
+  }
+ ],
+ "na_zapytanie": {
+  "manekiny-ratownictwa-wodnego": "Warianty pływające i tonące (dorosły/dziecko) wyceniamy indywidualnie — ceny do potwierdzenia u producenta.",
+  "symulacja-medyczna": "Zestawy do symulacji medycznej konfigurujemy pod scenariusze ośrodka — wycena indywidualna."
+ }
+}

@@ -31,5 +31,11 @@
   "opinie": {
     "_instrukcja": "WYŁĄCZNIE prawdziwe opinie za zgodą autora. Format: tresc, autor, organizacja.",
     "wpisy": []
+  },
+  "galeria": {
+    "_instrukcja": "Pliki z img/ pomijane w galeriach produktów (bez kasowania plików).",
+    "wyklucz": [
+      "manekiny-ratownictwa-wodnego-05.jpg"
+    ]
   }
 }

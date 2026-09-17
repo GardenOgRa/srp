@@ -22,6 +22,27 @@ def load_site_data():
 SITE = load_site_data()
 _firma = SITE.get("firma", {})
 
+def load_cennik():
+    """data/cennik.json — publiczne ceny katalogowe (źródło: sklep Turbomedic). Brak pliku = bez cen na stronie."""
+    path = os.path.join(ROOT, "data", "cennik.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"! data/cennik.json nieczytelny ({e}) — strona bez cen")
+        return {}
+
+CENNIK = load_cennik()
+GALERIA_WYKLUCZ = set((SITE.get("galeria", {}) or {}).get("wyklucz", []))
+
+def cena_pln(v):
+    """12345.67 -> '12 345,67 zł'"""
+    s = f"{v:,.2f}".replace(",", "\u00a0").replace(".", ",")
+    return s + "\u00a0zł"
+
+def cennik_dla(slug):
+    return [x for x in CENNIK.get("pozycje", []) if x.get("slug") == slug]
+
 BRAND = _firma.get("nazwa") or "SRP Polska"
 DISTRIBUTOR = _firma.get("opis") or "Wyłączny dystrybutor produktów SRP w Polsce"
 PHONE = _firma.get("telefon") or "+48 000 000 000"
@@ -445,7 +466,7 @@ codziennie przez wiele lat — a serwis i części dostępne są w Polsce.</p>
 scenariuszach urazowych, a przy resuscytacji — system ShockLink™ do ćwiczeń z prawdziwym
 defibrylatorem. Pakiet sprzęt + szkolenie wdrożeniowe daje najszybszy zwrot z inwestycji.</p>
 <p><strong>Nie wiesz, który model wybrać?</strong> Zobacz <a href="../porownanie-manekinow.html">porównanie
-modeli</a> albo <a href="../zapytanie-ofertowe.html">umów bezpłatny pokaz</a> — przywieziemy sprzęt do Twojej jednostki.</p>
+modeli</a> albo <a href="../zapytanie-ofertowe.html?rozmowa=1">umów rozmowę o produkcie</a> — doradzimy konfigurację pod Wasze scenariusze.</p>
 """,
     },
     {
@@ -564,7 +585,7 @@ def main_image(prefix):
 def gallery_images(prefix, limit=6):
     """zdjęcia poza głównym; pomija miniatury (<40 KB)"""
     main = main_image(prefix)
-    return [f for f in images_for(prefix) if f != main and _size(f) > 40_000][:limit]
+    return [f for f in images_for(prefix) if f != main and f not in GALERIA_WYKLUCZ and _size(f) > 40_000][:limit]
 
 def thumb_path(f):
     """miniatura 640 px z img/thumb/ (zawsze .jpg); None gdy brak"""
@@ -592,6 +613,8 @@ SEO_OPISY = {
                   "sprzedaż, pokazy, serwis i szkolenia dla straży, wojska i ratownictwa.",
     "produkty/index.html": "Katalog manekinów ratowniczych SRP: modele Standard, PRO, RKO, wodne i ogniowe "
                            "oraz symulatory ran. Parametry, masy, zastosowania i wycena.",
+    "cennik.html": "Cennik manekinów ratowniczych i symulatorów ran SRP: ceny netto i brutto w PLN, "
+                   "zamówienie w sklepie lub oferta indywidualna dla jednostek i przetargów.",
     "dla-kogo.html": "Dobór manekinów treningowych dla straży pożarnej, wojska, ratownictwa medycznego "
                      "i wodnego, szpitali i ośrodków szkoleniowych. Polecane modele SRP.",
     "porownanie-manekinow.html": "Porównanie manekinów ratowniczych SRP: masa, materiał, funkcje RKO, praca "
@@ -609,7 +632,7 @@ SEO_OPISY = {
     "warunki-zakupu.html": "Warunki zakupu sprzętu SRP: zamówienie, płatność, czas i koszt dostawy, "
                            "gwarancja i serwis w Polsce. Informacje dla firm i instytucji.",
     "zapytanie-ofertowe.html": "Zapytanie ofertowe na manekiny ratownicze, symulatory ran i szkolenia SRP. "
-                               "Umów bezpłatny pokaz sprzętu. Odpowiadamy w jeden dzień roboczy.",
+                               "Umów rozmowę o produkcie online. Odpowiadamy w jeden dzień roboczy.",
     "o-nas.html": "SRP Polska (TURBOMEDIC Sp. z o.o.) — wyłączny dystrybutor szwedzkich manekinów "
                   "ratowniczych SRP. Doradztwo, sprzedaż, serwis i szkolenia w całej Polsce.",
     "aktualnosci.html": "Aktualności SRP Polska: wdrożenia manekinów ratowniczych, szkolenia, pokazy "
@@ -655,7 +678,7 @@ def head(title, depth=0, desc=None):
       <a href="{p}wiedza/index.html">Wiedza</a>
       <a href="{p}o-nas.html">O nas</a>
       <a href="{p}kontakt.html">Kontakt</a>
-      <a class="nav-cta" href="{p}zapytanie-ofertowe.html">Umów pokaz / wycena</a>
+      <a class="nav-cta" href="{p}zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę / wycena</a>
     </nav>
   </div>
 </header>
@@ -681,6 +704,7 @@ def footer(depth=0):
     <div>
       <h4>Na skróty</h4>
       <p><a href="{p}produkty/index.html">Produkty</a><br>
+      <a href="{p}cennik.html">Cennik</a><br>
       <a href="{p}porownanie-manekinow.html">Porównanie modeli</a><br>
       <a href="{p}dla-kogo.html">Rozwiązania dla branż</a><br>
       <a href="{p}index.html#meldunek">Meldunek: fantomy w służbie</a><br>
@@ -700,6 +724,7 @@ def footer(depth=0):
 <script>
 /* wysyłka formularzy do webhooka n8n (bez przeładowania strony) */
 (function(){{
+  if(location.search.indexOf('rozmowa=1')>-1){{ var d=document.querySelector('input[name=demo]'); if(d){{ d.checked=true; var fm=d.closest('form'); if(fm) fm.scrollIntoView({{block:'start'}}); }} }}
   document.querySelectorAll('form[data-lead-form="1"]').forEach(function(f){{
     f.addEventListener('submit', function(ev){{
       ev.preventDefault();
@@ -707,6 +732,8 @@ def footer(depth=0):
       if(btn){{ btn.disabled=true; btn.innerHTML='Wysyłanie…'; }}
       var fd=new FormData(f), data={{}};
       fd.forEach(function(v,k){{ data[k]= data[k] ? [].concat(data[k],v) : v; }});
+      if(data.website){{ f.innerHTML='<div class="form-ok"><strong>Dziękujemy.</strong></div>'; return; }} /* pułapka na boty */
+      delete data.website;
       data._strona=location.pathname; data._czas=new Date().toISOString();
       fetch(f.action,{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify(data)}})
         .then(function(r){{ if(!r.ok) throw 0;
@@ -937,6 +964,22 @@ table.specs{width:100%;border-collapse:collapse;margin:18px 0;font-size:15px}
 table.specs th{white-space:nowrap;text-align:left;vertical-align:top;padding:10px 18px 10px 0;font-weight:700}
 table.specs td,table.specs th{border-bottom:1px solid var(--line);padding-top:10px;padding-bottom:10px}
 .usebox{background:#f4f4f2;border-left:4px solid var(--yellow);padding:16px 20px;margin:20px 0;font-size:15px}
+.hp{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+.cena{border:2px solid var(--black);padding:16px 20px;margin:22px 0}
+.cena-h{font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:22px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.cena-info{margin:0 0 8px;color:var(--muted)}
+.cena-wrap{overflow-x:auto}
+.cena-t{width:100%;border-collapse:collapse;font-size:15px}
+.cena-t td,.cena-t th{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle;text-align:left}
+.cena-t th{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.cena-t .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.cena-t .vat{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.cena-t .act{text-align:right;white-space:nowrap}
+.cena-t .meta{font-size:13px;color:var(--muted);margin-top:2px}
+.cena-t tr:last-child td{border-bottom:0}
+.btn.mini{font-size:11px;padding:8px 14px;letter-spacing:1px}
+.mini-link{font-size:13px;color:var(--muted)}
+@media(max-width:640px){.cena-t .act{text-align:left;white-space:normal}.cena-t td{padding:8px 6px}}
 
 /* listy szkoleń */
 .course{border:1px solid var(--line);padding:22px 26px;background:#fff}
@@ -1104,10 +1147,10 @@ def page_home():
     else:
         quotes = """<div class="refbox">
       <h3>Twoja jednostka może być naszą pierwszą polską referencją</h3>
-      <p>Rozpoczynamy dystrybucję w Polsce i budujemy listę referencyjną. Umów bezpłatny pokaz,
-      przetestuj sprzęt w swoich procedurach — a jeśli spełni oczekiwania, Twoja opinia pojawi się
-      w tym miejscu.</p>
-      <a class="btn solid" href="zapytanie-ofertowe.html">Umów pokaz i przetestuj <span class="arr">→</span></a>
+      <p>Rozpoczynamy dystrybucję w Polsce i budujemy listę referencyjną. Porozmawiaj z nami o swoich
+      scenariuszach ćwiczeń, przetestuj sprzęt w swoich procedurach — a jeśli spełni oczekiwania, Twoja
+      opinia pojawi się w tym miejscu.</p>
+      <a class="btn solid" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę o produkcie <span class="arr">→</span></a>
     </div>""" + deploys_html
     hero_bg = ('style="background-image:linear-gradient(rgba(10,12,8,.55),rgba(10,12,8,.7)),'
                "url('img/home-01.jpg');background-size:cover;background-position:center\"") if main_image("home") else ""
@@ -1132,8 +1175,8 @@ def page_home():
     <p>Szukasz sprzętu treningowego najwyższej jakości? Jesteśmy wyłącznym dystrybutorem szwedzkich
     manekinów ratowniczych i symulatorów ran SRP w Polsce. Skontaktuj się z nami, aby poznać
     właściwości produktów, ceny i dostępność.</p>
-    <a class="btn solid" href="zapytanie-ofertowe.html">Umów bezpłatny pokaz <span class="arr">→</span></a>
-    &nbsp; {btn("porownanie-manekinow.html", "Porównaj modele")}
+    <a class="btn solid" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę o produkcie <span class="arr">→</span></a>
+    &nbsp; {btn("cennik.html", "Zobacz cennik")}
   </div>
 </div>
 
@@ -1240,8 +1283,8 @@ def page_home():
     <div class="steps">
       <div class="step"><div class="no">01</div><h3>Konsultacja i dobór</h3>
         <p>Rozmawiamy o Waszych scenariuszach ćwiczeń i budżecie — doradzimy konfigurację zamiast sprzedawać „z katalogu”.</p></div>
-      <div class="step"><div class="no">02</div><h3>Bezpłatny pokaz</h3>
-        <p>Przywozimy sprzęt do Twojej jednostki. Testujesz go na własnych noszach, w swoich procedurach, ze swoim zespołem.</p></div>
+      <div class="step"><div class="no">02</div><h3>Rozmowa o produkcie</h3>
+        <p>30 minut online lub telefonicznie: pokazujemy sprzęt na filmach instruktażowych, odpowiadamy na pytania o Wasze scenariusze. Pokaz na żywo — na zapytanie, gdy egzemplarz demonstracyjny jest dostępny.</p></div>
       <div class="step"><div class="no">03</div><h3>Oferta lub przetarg</h3>
         <p>Przygotowujemy wycenę, dokumentację do zamówień publicznych (OPZ, certyfikaty) i warianty finansowania.</p></div>
       <div class="step"><div class="no">04</div><h3>Dostawa i wdrożenie</h3>
@@ -1265,6 +1308,7 @@ def page_home():
     <p style="margin:6px 0 18px;max-width:640px">Nowe produkty, terminy szkoleń otwartych i praktyczne
     materiały dla instruktorów — maksymalnie raz w miesiącu, bez spamu.</p>
     <form {form_attrs}>
+  <div class="hp" aria-hidden="true"><label>Strona www <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
       <input type="email" name="email" placeholder="Twój adres e-mail" required>
       <button class="btn" type="submit">Zapisz się</button>
     <input type="hidden" name="typ" value="newsletter">
@@ -1289,6 +1333,58 @@ przetestowane w praktyce, zaprojektowane na lata intensywnych ćwiczeń.</p></di
 """
     return head("Manekiny ratownicze i fantomy — katalog", 1) + body + footer(1)
 
+def render_cena_produktu(slug, ceny, depth=1):
+    """Blok „Cena katalogowa” na karcie produktu. Ceny publiczne ze sklepu Turbomedic (data/cennik.json)."""
+    p = "../" * depth
+    if not ceny:
+        info = (CENNIK.get("na_zapytanie", {}) or {}).get(slug)
+        if not info:
+            return ""
+        return (f'<div class="cena"><div class="cena-h">Cena</div><p class="cena-info">{esc(info)}</p>'
+                f'<p class="note">Wycena w ciągu jednego dnia roboczego — <a href="{p}zapytanie-ofertowe.html">wyślij zapytanie</a>.</p></div>')
+    prog = CENNIK.get("prog_sklep_netto", 10000)
+    rows = []
+    for c in ceny:
+        kup = (f'<a class="btn mini" href="{esc(c["sklep"])}" target="_blank" rel="noopener">Zamów w sklepie</a>'
+               if c["netto"] < prog and c.get("sklep") else
+               (f'<a class="mini-link" href="{esc(c["sklep"])}" target="_blank" rel="noopener">cena w sklepie</a>' if c.get("sklep") else ""))
+        rows.append(f'<tr><td>{esc(c["nazwa"])}</td><td class="num"><b>{cena_pln(c["netto"])}</b><span class="vat">netto</span></td>'
+                    f'<td class="num">{cena_pln(c["brutto"])}<span class="vat">brutto</span></td><td class="act">{kup}</td></tr>')
+    return (f'<div class="cena"><div class="cena-h">Cena katalogowa</div><table class="cena-t">{"".join(rows)}</table>'
+            f'<p class="note">Ceny katalogowe wg sklepu Turbomedic, stan na {esc(CENNIK.get("stan_na",""))}, VAT {CENNIK.get("vat_proc",23)}%. '
+            f'Pakiety ze szkoleniem, przetargi i większe zamówienia wyceniamy indywidualnie — <a href="{p}zapytanie-ofertowe.html">zapytaj o ofertę</a>. '
+            f'<a href="{p}cennik.html">Pełny cennik</a>.</p></div>')
+
+def page_cennik():
+    by_slug = {p["slug"]: p for p in PRODUCTS}
+    prog = CENNIK.get("prog_sklep_netto", 10000)
+    rows = []
+    for c in CENNIK.get("pozycje", []):
+        prod = by_slug.get(c["slug"])
+        link = f'<a href="produkty/{c["slug"]}.html">{esc(prod["name"])}</a>' if prod else ""
+        kup = (f'<a class="btn mini" href="{esc(c["sklep"])}" target="_blank" rel="noopener">Zamów w sklepie</a>'
+               if c["netto"] < prog and c.get("sklep") else '<a class="btn mini" href="zapytanie-ofertowe.html">Zapytaj o ofertę</a>')
+        rows.append(f'<tr><td>{esc(c["nazwa"])}<div class="meta">{link}</div></td><td class="num"><b>{cena_pln(c["netto"])}</b></td>'
+                    f'<td class="num">{cena_pln(c["brutto"])}</td><td class="act">{kup}</td></tr>')
+    nz = "".join(f'<tr><td><a href="produkty/{s}.html">{esc(by_slug[s]["name"])}</a><div class="meta">{esc(t)}</div></td>'
+                 f'<td class="num" colspan="2">na zapytanie</td><td class="act"><a class="btn mini" href="zapytanie-ofertowe.html">Zapytaj o ofertę</a></td></tr>'
+                 for s, t in (CENNIK.get("na_zapytanie", {}) or {}).items() if s in by_slug)
+    body = f"""
+<div class="page-head"><div class="wrap"><h1>Cennik</h1>
+<p>Ceny katalogowe sprzętu SRP w złotych, netto i brutto (VAT {CENNIK.get("vat_proc",23)}%), stan na {esc(CENNIK.get("stan_na",""))}.
+Pakiety ze szkoleniem, zamówienia publiczne, leasing i większe ilości — wyceniamy indywidualnie w ciągu jednego dnia roboczego.</p></div></div>
+<section><div class="wrap" style="max-width:1000px">
+  <div class="cena-wrap"><table class="cena-t full">
+    <thead><tr><th>Produkt</th><th class="num">Netto</th><th class="num">Brutto</th><th></th></tr></thead>
+    <tbody>{"".join(rows)}{nz}</tbody>
+  </table></div>
+  <p class="note" style="margin-top:18px">Ceny nie zawierają kosztów dostawy. Dla jednostek budżetowych przygotowujemy ofertę z dokumentami
+  do postępowania (OPZ, certyfikaty). Źródło cen: <a href="{esc(CENNIK.get("zrodlo","#"))}" target="_blank" rel="noopener">sklep Turbomedic</a>
+  (spółka {esc(NAZWA_PELNA)}, wyłączny dystrybutor SRP). Chcesz porozmawiać o doborze? {btn("zapytanie-ofertowe.html?rozmowa=1", "Umów rozmowę o produkcie")}</p>
+</div></section>
+"""
+    return head("Cennik manekinów ratowniczych SRP") + body + footer()
+
 def page_product(p):
     feats = "\n".join(f"<li>{esc(f)}</li>" for f in p["features"])
     specs = "\n".join(f"<tr><th>{esc(k)}</th><td>{esc(v)}</td></tr>" for k, v in p["specs"])
@@ -1307,12 +1403,19 @@ def page_product(p):
     is_manikin = p["slug"] in {c[0] for c in COMPARE_COLS}
     cmp_link = ('<p class="note" style="margin-top:14px">Nie wiesz, który model wybrać? '
                 '<a href="../porownanie-manekinow.html"><strong>Zobacz porównanie wszystkich manekinów →</strong></a></p>') if is_manikin else ""
+    ceny = cennik_dla(p["slug"])
+    cena_html = render_cena_produktu(p["slug"], ceny)
+    offers = ""
+    if ceny:
+        offers = (',"offers":{"@type":"AggregateOffer","priceCurrency":"PLN",'
+                  f'"lowPrice":{min(c["netto"] for c in ceny):.2f},"highPrice":{max(c["netto"] for c in ceny):.2f},'
+                  f'"offerCount":{len(ceny)},"seller":{{"@type":"Organization","name":{json.dumps(NAZWA_PELNA or BRAND, ensure_ascii=False)}}}}}')
     jsonld = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"Product",'
               f'"name":{json.dumps(p["name"], ensure_ascii=False)},'
               f'"description":{json.dumps(p["short"], ensure_ascii=False)},'
               '"brand":{"@type":"Brand","name":"SRP"},'
               '"manufacturer":{"@type":"Organization","name":"Svenska Räddningsprodukter AB"},'
-              '"countryOfOrigin":"SE"}</script>')
+              '"countryOfOrigin":"SE"' + offers + '}</script>')
     body = jsonld + f"""
 <div class="wrap crumbs"><a href="../index.html">Start</a> / <a href="index.html">Produkty</a> / {esc(p["name"])}</div>
 <section style="padding-top:20px">
@@ -1329,8 +1432,9 @@ def page_product(p):
       <ul class="feat">{feats}</ul>
       {specs_html}
       <div class="usebox"><strong>Zastosowanie:</strong> {esc(p["use"])}</div>
-      <a class="btn solid" href="../zapytanie-ofertowe.html">Zapytaj o cenę <span class="arr">→</span></a>
-      &nbsp; {btn("../zapytanie-ofertowe.html", "Umów bezpłatny pokaz")}
+      {cena_html}
+      <a class="btn solid" href="../zapytanie-ofertowe.html">Zapytaj o ofertę <span class="arr">→</span></a>
+      &nbsp; {btn("../zapytanie-ofertowe.html?rozmowa=1", "Umów rozmowę o produkcie")}
       {cmp_link}
       <p class="note">Do produktu dołączamy: kartę katalogową PDF, dokumenty do postępowań (certyfikaty,
       deklaracje) oraz opcjonalne szkolenie wdrożeniowe — <a href="../do-pobrania.html">zobacz materiały do pobrania</a>.</p>
@@ -1388,8 +1492,8 @@ symulatorach ran i manekinach SRP.</p></div></div>
 def page_terms():
     body = f"""
 <div class="page-head"><div class="wrap"><h1>Warunki zakupu</h1>
-<p>Poniższe warunki dotyczą sprzedaży prowadzonej przez {BRAND} na terenie Polski.
-[Do weryfikacji prawnej i uzupełnienia danymi Twojej firmy.]</p></div></div>
+<p>Poniższe warunki dotyczą sprzedaży prowadzonej przez {NAZWA_PELNA} ({BRAND}) na terenie Polski
+i mają charakter informacyjny; wiążące warunki zawiera każdorazowo oferta lub umowa.</p></div></div>
 <section><div class="wrap" style="max-width:860px">
   <h3>Płatności</h3>
   <p>Instytucje i firmy: płatność przelewem na podstawie faktury VAT, termin 30 dni (możliwa e-faktura).
@@ -1425,6 +1529,7 @@ finansowania. Odpowiadamy zwykle w ciągu jednego dnia roboczego. Przygotowujemy
 dokumentację do zamówień publicznych.</p></div></div>
 <section><div class="wrap">
 <form {form_attrs} style="max-width:820px">
+  <div class="hp" aria-hidden="true"><label>Strona www <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
   <div class="grid2" style="gap:16px;align-items:start">
     <label>Imię i nazwisko <input name="name" required></label>
     <label>Organizacja / jednostka <input name="org"></label>
@@ -1444,7 +1549,8 @@ dokumentację do zamówień publicznych.</p></div></div>
     </div>
   </fieldset>
   <div class="checks">
-    <label><input type="checkbox" name="demo"> Chcę umówić <strong>bezpłatny pokaz</strong> w naszej siedzibie</label>
+    <label><input type="checkbox" name="demo"> Chcę umówić <strong>rozmowę o produkcie</strong> (30 min, online lub telefon)</label>
+    <label><input type="checkbox" name="pokaz_zywo"> Interesuje mnie <strong>pokaz na żywo</strong>, gdy egzemplarz demonstracyjny będzie dostępny</label>
     <label><input type="checkbox" name="tender"> Zapytanie dotyczy <strong>postępowania przetargowego</strong></label>
     <label><input type="checkbox" name="financing"> Interesuje mnie <strong>leasing / najem / raty</strong></label>
     <label><input type="checkbox" name="training"> Poproszę o wycenę <strong>pakietu ze szkoleniem wdrożeniowym</strong></label>
@@ -1501,7 +1607,7 @@ def page_news():
   <div class="card">{pic("home-05.jpg", "Produkty SRP", thumb=True)}<div class="body"><h3>Produkty SRP oficjalnie w Polsce</h3>
   <p>Rozpoczynamy oficjalną, wyłączną dystrybucję szwedzkich manekinów ratowniczych i symulatorów ran
   SRP na rynku polskim. Zapraszamy jednostki i ośrodki szkoleniowe na bezpłatne pokazy sprzętu.</p>
-  {btn("zapytanie-ofertowe.html", "Umów pokaz")}</div></div>
+  {btn("zapytanie-ofertowe.html?rozmowa=1", "Umów rozmowę o produkcie")}</div></div>
   </div>
   <p class="lead" style="margin-top:34px">Tu będą pojawiać się informacje o targach, pokazach,
   wdrożeniach u klientów i nowościach produktowych. Chcesz je dostawać na skrzynkę?
@@ -1524,6 +1630,7 @@ def page_contact():
     <p>Svenska Räddningsprodukter AB<br>Bergslagsgatan 1F, SE-733 31 Sala, Szwecja</p>
   </div>
   <form {form_attrs}>
+  <div class="hp" aria-hidden="true"><label>Strona www <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
     <label>Imię i nazwisko <input name="name" required></label>
     <label>E-mail <input type="email" name="email" required></label>
     <label>Telefon <input type="tel" name="phone"></label>
@@ -1550,7 +1657,7 @@ def page_segments():
     <h2>{esc(s["name"])}</h2>
     <p class="lead">{esc(s["desc"])}</p>
     <div class="grid4" style="margin-top:30px">{prods}</div>
-    <div style="margin-top:26px">{btn("zapytanie-ofertowe.html", "Umów pokaz dla swojej jednostki")}</div>
+    <div style="margin-top:26px">{btn("zapytanie-ofertowe.html?rozmowa=1", "Umów rozmowę dla swojej jednostki")}</div>
   </div>
 </section>""")
     body = f"""
@@ -1707,6 +1814,7 @@ jak dobierać sprzęt, projektować ćwiczenia i budować kompetencje zespołu.<
   <p class="lead">Nowe poradniki, terminy szkoleń otwartych i informacje o produktach —
   maksymalnie raz w miesiącu.</p>
   <form {form_attrs} style="display:flex;flex-wrap:wrap;gap:12px;max-width:560px;margin-top:18px">
+  <div class="hp" aria-hidden="true"><label>Strona www <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
     <input type="email" name="email" placeholder="Twój adres e-mail" required>
     <button class="btn solid" type="submit">Zapisz się</button>
   <input type="hidden" name="typ" value="newsletter">
@@ -1734,7 +1842,7 @@ def page_article(a):
 def page_privacy():
     body = f"""
 <div class="page-head"><div class="wrap"><h1>Polityka prywatności</h1>
-<p>Szkic do weryfikacji prawnej — [uzupełnij dane administratora przed publikacją docelową].</p></div></div>
+<p>Informacja o przetwarzaniu danych osobowych w serwisie srp-polska.pl. Wersja z {CENNIK.get("stan_na","2026-09-17")}.</p></div></div>
 <section><div class="wrap" style="max-width:860px">
   <h3>1. Administrator danych</h3>
   <p>Administratorem Twoich danych osobowych jest:</p>
@@ -1751,17 +1859,22 @@ def page_privacy():
   <p>Dane z zapytań przechowujemy przez okres prowadzenia korespondencji i wymagany przepisami
   (np. podatkowymi przy zawarciu umowy). Dane newslettera — do wycofania zgody.</p>
   <h3 style="margin-top:26px">4. Odbiorcy danych</h3>
-  <p>Dane mogą być powierzane podmiotom obsługującym naszą pocztę, hosting i formularze
-  [wymień dostawców po podpięciu, np. operator formularzy] — wyłącznie w zakresie niezbędnym
-  do świadczenia tych usług.</p>
+  <p>Dane powierzamy wyłącznie podmiotom niezbędnym do działania serwisu i obsługi zapytań, w zakresie
+  koniecznym do świadczenia usługi: hosting strony — GitHub, Inc. (GitHub Pages; serwer rejestruje adres IP
+  w logach technicznych), obsługa formularzy i automatyzacja — własna instancja n8n na serwerze w Unii Europejskiej,
+  poczta firmowa — cyber_Folks S.A. (Polska). Powiadomienia o zapytaniach trafiają także na skrzynkę firmową
+  prowadzoną w usłudze Google Workspace/Gmail (Google Ireland Ltd.). Nie sprzedajemy danych i nie przekazujemy ich
+  do celów marketingowych osób trzecich. Zmiana listy odbiorców (np. system CRM, asystent AI na stronie) zostanie
+  odnotowana w tej polityce przed uruchomieniem usługi.</p>
   <h3 style="margin-top:26px">5. Twoje prawa</h3>
   <p>Masz prawo dostępu do danych, ich sprostowania, usunięcia, ograniczenia przetwarzania,
   przenoszenia, sprzeciwu oraz wniesienia skargi do Prezesa UODO. Wycofanie zgody nie wpływa
   na zgodność z prawem wcześniejszego przetwarzania.</p>
   <h3 style="margin-top:26px">6. Pliki cookies</h3>
-  <p>Strona nie używa własnych plików cookies ani narzędzi śledzących. Czcionki ładowane są
-  z Google Fonts (Google LLC może rejestrować adres IP przy pobraniu czcionki). [Zaktualizuj
-  po dodaniu analityki.]</p>
+  <p>Strona nie używa plików cookies ani narzędzi śledzących. Czcionki są serwowane z naszego serwera,
+  bez połączeń z usługami firm trzecich. Filmy produktowe odtwarzamy z własnego serwera, bez osadzania odtwarzaczy
+  zewnętrznych. Jeśli w przyszłości dodamy bezcookie'ową statystykę odwiedzin lub asystenta AI, opiszemy to
+  w tym miejscu przed uruchomieniem.</p>
 </div></section>
 """
     return head("Polityka prywatności") + body + footer()
@@ -1796,7 +1909,7 @@ def page_404():
 def write_seo_files():
     pages = (["index.html", "produkty/index.html"]
              + [f"produkty/{p['slug']}.html" for p in PRODUCTS]
-             + ["dla-kogo.html", "porownanie-manekinow.html", "zamowienia-publiczne.html",
+             + ["cennik.html", "dla-kogo.html", "porownanie-manekinow.html", "zamowienia-publiczne.html",
                 "do-pobrania.html", "faq.html", "wiedza/index.html"]
              + [f"wiedza/{a['slug']}.html" for a in ARTICLES]
              + ["szkolenia.html", "warunki-zakupu.html", "zapytanie-ofertowe.html",
@@ -1829,6 +1942,7 @@ def main():
     write("kontakt.html", page_contact())
     write("dla-kogo.html", page_segments())
     write("porownanie-manekinow.html", page_compare())
+    write("cennik.html", page_cennik())
     write("zamowienia-publiczne.html", page_tenders())
     write("do-pobrania.html", page_downloads())
     write("faq.html", page_faq())

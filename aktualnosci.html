@@ -30,7 +30,7 @@
       <a href="wiedza/index.html">Wiedza</a>
       <a href="o-nas.html">O nas</a>
       <a href="kontakt.html">Kontakt</a>
-      <a class="nav-cta" href="zapytanie-ofertowe.html">Umów pokaz / wycena</a>
+      <a class="nav-cta" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę / wycena</a>
     </nav>
   </div>
 </header>
@@ -42,7 +42,7 @@
   <div class="card"><div class="ph has-img"><img src="img/thumb/home-05.jpg" alt="Produkty SRP" loading="lazy" decoding="async"></div><div class="body"><h3>Produkty SRP oficjalnie w Polsce</h3>
   <p>Rozpoczynamy oficjalną, wyłączną dystrybucję szwedzkich manekinów ratowniczych i symulatorów ran
   SRP na rynku polskim. Zapraszamy jednostki i ośrodki szkoleniowe na bezpłatne pokazy sprzętu.</p>
-  <a class="btn" href="zapytanie-ofertowe.html">Umów pokaz <span class="arr">→</span></a></div></div>
+  <a class="btn" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę o produkcie <span class="arr">→</span></a></div></div>
   </div>
   <p class="lead" style="margin-top:34px">Tu będą pojawiać się informacje o targach, pokazach,
   wdrożeniach u klientów i nowościach produktowych. Chcesz je dostawać na skrzynkę?
@@ -66,6 +66,7 @@
     <div>
       <h4>Na skróty</h4>
       <p><a href="produkty/index.html">Produkty</a><br>
+      <a href="cennik.html">Cennik</a><br>
       <a href="porownanie-manekinow.html">Porównanie modeli</a><br>
       <a href="dla-kogo.html">Rozwiązania dla branż</a><br>
       <a href="index.html#meldunek">Meldunek: fantomy w służbie</a><br>
@@ -85,6 +86,7 @@
 <script>
 /* wysyłka formularzy do webhooka n8n (bez przeładowania strony) */
 (function(){
+  if(location.search.indexOf('rozmowa=1')>-1){ var d=document.querySelector('input[name=demo]'); if(d){ d.checked=true; var fm=d.closest('form'); if(fm) fm.scrollIntoView({block:'start'}); } }
   document.querySelectorAll('form[data-lead-form="1"]').forEach(function(f){
     f.addEventListener('submit', function(ev){
       ev.preventDefault();
@@ -92,6 +94,8 @@
       if(btn){ btn.disabled=true; btn.innerHTML='Wysyłanie…'; }
       var fd=new FormData(f), data={};
       fd.forEach(function(v,k){ data[k]= data[k] ? [].concat(data[k],v) : v; });
+      if(data.website){ f.innerHTML='<div class="form-ok"><strong>Dziękujemy.</strong></div>'; return; } /* pułapka na boty */
+      delete data.website;
       data._strona=location.pathname; data._czas=new Date().toISOString();
       fetch(f.action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
         .then(function(r){ if(!r.ok) throw 0;

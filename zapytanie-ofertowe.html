@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Wycena manekinów ratowniczych i szkoleń | SRP Polska</title>
-<meta name="description" content="Zapytanie ofertowe na manekiny ratownicze, symulatory ran i szkolenia SRP. Umów bezpłatny pokaz sprzętu. Odpowiadamy w jeden dzień roboczy.">
+<meta name="description" content="Zapytanie ofertowe na manekiny ratownicze, symulatory ran i szkolenia SRP. Umów rozmowę o produkcie online. Odpowiadamy w jeden dzień roboczy.">
 <link rel="icon" type="image/svg+xml" href="img/srp-logo.svg">
 <meta property="og:title" content="Wycena manekinów ratowniczych i szkoleń | SRP Polska">
-<meta property="og:description" content="Zapytanie ofertowe na manekiny ratownicze, symulatory ran i szkolenia SRP. Umów bezpłatny pokaz sprzętu. Odpowiadamy w jeden dzień roboczy.">
+<meta property="og:description" content="Zapytanie ofertowe na manekiny ratownicze, symulatory ran i szkolenia SRP. Umów rozmowę o produkcie online. Odpowiadamy w jeden dzień roboczy.">
 <meta property="og:image" content="https://srp-polska.pl/img/home-01.jpg">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="pl_PL">
@@ -30,7 +30,7 @@
       <a href="wiedza/index.html">Wiedza</a>
       <a href="o-nas.html">O nas</a>
       <a href="kontakt.html">Kontakt</a>
-      <a class="nav-cta" href="zapytanie-ofertowe.html">Umów pokaz / wycena</a>
+      <a class="nav-cta" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę / wycena</a>
     </nav>
   </div>
 </header>
@@ -41,6 +41,7 @@ finansowania. Odpowiadamy zwykle w ciągu jednego dnia roboczego. Przygotowujemy
 dokumentację do zamówień publicznych.</p></div></div>
 <section><div class="wrap">
 <form action="https://n8n.ogrodowiak.pl/webhook/srp-lead" method="post" data-lead-form="1" style="max-width:820px">
+  <div class="hp" aria-hidden="true"><label>Strona www <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
   <div class="grid2" style="gap:16px;align-items:start">
     <label>Imię i nazwisko <input name="name" required></label>
     <label>Organizacja / jednostka <input name="org"></label>
@@ -72,7 +73,8 @@ dokumentację do zamówień publicznych.</p></div></div>
     </div>
   </fieldset>
   <div class="checks">
-    <label><input type="checkbox" name="demo"> Chcę umówić <strong>bezpłatny pokaz</strong> w naszej siedzibie</label>
+    <label><input type="checkbox" name="demo"> Chcę umówić <strong>rozmowę o produkcie</strong> (30 min, online lub telefon)</label>
+    <label><input type="checkbox" name="pokaz_zywo"> Interesuje mnie <strong>pokaz na żywo</strong>, gdy egzemplarz demonstracyjny będzie dostępny</label>
     <label><input type="checkbox" name="tender"> Zapytanie dotyczy <strong>postępowania przetargowego</strong></label>
     <label><input type="checkbox" name="financing"> Interesuje mnie <strong>leasing / najem / raty</strong></label>
     <label><input type="checkbox" name="training"> Poproszę o wycenę <strong>pakietu ze szkoleniem wdrożeniowym</strong></label>
@@ -101,6 +103,7 @@ dokumentację do zamówień publicznych.</p></div></div>
     <div>
       <h4>Na skróty</h4>
       <p><a href="produkty/index.html">Produkty</a><br>
+      <a href="cennik.html">Cennik</a><br>
       <a href="porownanie-manekinow.html">Porównanie modeli</a><br>
       <a href="dla-kogo.html">Rozwiązania dla branż</a><br>
       <a href="index.html#meldunek">Meldunek: fantomy w służbie</a><br>
@@ -120,6 +123,7 @@ dokumentację do zamówień publicznych.</p></div></div>
 <script>
 /* wysyłka formularzy do webhooka n8n (bez przeładowania strony) */
 (function(){
+  if(location.search.indexOf('rozmowa=1')>-1){ var d=document.querySelector('input[name=demo]'); if(d){ d.checked=true; var fm=d.closest('form'); if(fm) fm.scrollIntoView({block:'start'}); } }
   document.querySelectorAll('form[data-lead-form="1"]').forEach(function(f){
     f.addEventListener('submit', function(ev){
       ev.preventDefault();
@@ -127,6 +131,8 @@ dokumentację do zamówień publicznych.</p></div></div>
       if(btn){ btn.disabled=true; btn.innerHTML='Wysyłanie…'; }
       var fd=new FormData(f), data={};
       fd.forEach(function(v,k){ data[k]= data[k] ? [].concat(data[k],v) : v; });
+      if(data.website){ f.innerHTML='<div class="form-ok"><strong>Dziękujemy.</strong></div>'; return; } /* pułapka na boty */
+      delete data.website;
       data._strona=location.pathname; data._czas=new Date().toISOString();
       fetch(f.action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
         .then(function(r){ if(!r.ok) throw 0;
