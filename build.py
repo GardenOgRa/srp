@@ -674,6 +674,9 @@ SEO_OPISY = {
 TEL_HREF = "tel:" + PHONE.replace(" ", "")
 WA_HREF = "https://wa.me/" + "".join(ch for ch in PHONE if ch.isdigit())
 
+# og:title strony głównej (werdykt pr-marketing 21.09): hasło + kategoria, bez podwójnego „SRP”
+OG_TITLE_INDEX = "Szwedzka jakość. Polska dystrybucja. — manekiny ratownicze | SRP Polska"
+
 def head(title, depth=0, desc=None, captcha=False):
     p = "../" * depth
     d = " ".join((desc or DESC_DOMYSLNY).split())[:300]
@@ -816,6 +819,9 @@ def seo_postprocess(path, html_out):
                            lambda m: m.group(1) + d + m.group(2), html_out, count=1)
         html_out = _re.sub(r'(<meta property="og:description" content=")[^"]*(")',
                            lambda m: m.group(1) + d + m.group(2), html_out, count=1)
+    if path == "index.html":  # og:title z hasłem tylko dla strony głównej (<title> bez zmian)
+        html_out = _re.sub(r'(<meta property="og:title" content=")[^"]*(")',
+                           lambda m: m.group(1) + esc(OG_TITLE_INDEX) + m.group(2), html_out, count=1)
     return html_out
 
 def write(path, content):
