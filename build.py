@@ -5,7 +5,7 @@ Generator statycznych stron serwisu SRP Polska.
 Uruchom: python3 build.py  -> generuje pliki HTML w katalogu głównym.
 Treści edytuj poniżej (PRODUCTS, COURSES, teksty w funkcjach stron).
 """
-import os, html, json
+import os, html, json, datetime
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -752,7 +752,7 @@ def footer(depth=0, cta=True):
       <a href="{p}kontakt.html">Kontakt</a></p>
     </div>
   </div>
-  <div class="wrap copyright">© {BRAND}. Produkty SRP® są znakiem towarowym Svenska Räddningsprodukter AB. MADE IN SWEDEN.</div>
+  <div class="wrap copyright">© {datetime.date.today().year} {BRAND} — {DISTRIBUTOR}. Szwedzka jakość. Polska dystrybucja. Produkty SRP® są znakiem towarowym Svenska Räddningsprodukter AB. MADE IN SWEDEN.</div>
 </footer>
 <script>
 /* menu mobilne: przycisk z aria-expanded, ikona ☰ / ✕ */
