@@ -53,11 +53,13 @@ nav a.ico{background:#fff;color:var(--black);padding:8px 11px;border-radius:2px}
 .hero-note{position:absolute;right:0;bottom:0;background:rgba(0,0,0,.55);font-size:11px;padding:4px 10px;color:#cfcfcf}
 
 /* przyciski */
-.btn{display:inline-block;border:2px solid currentColor;padding:13px 26px;text-decoration:none;text-transform:uppercase;font-weight:700;font-size:13px;letter-spacing:1.5px;transition:.2s}
+/* CTA zawsze w kolorze marki (żółć SRP) z czarnym tekstem — jeden kolor akcentu na całej stronie (POPRAWKI pr-marketing 21.09 #2);
+   hover: czarne tło, żółty tekst i obrys — czytelne zarówno na bieli, jak i na ciemnych sekcjach; żółty tekst nigdy na białym tle */
+.btn{display:inline-block;border:2px solid var(--yellow);background:var(--yellow);color:var(--black);padding:13px 26px;text-decoration:none;text-transform:uppercase;font-weight:700;font-size:13px;letter-spacing:1.5px;transition:.2s}
 .btn .arr{margin-left:8px}
-.btn:hover{background:var(--yellow);border-color:var(--yellow);color:var(--black)}
+.btn:hover{background:var(--black);border-color:var(--yellow);color:var(--yellow)}
 .btn.solid{background:var(--yellow);border-color:var(--yellow);color:var(--black)}
-.btn.solid:hover{background:#fff;border-color:#fff}
+.btn.solid:hover{background:var(--black);border-color:var(--yellow);color:var(--yellow)}
 
 /* sekcje */
 section{padding:72px 0}
@@ -175,7 +177,7 @@ form{display:grid;gap:16px;max-width:680px}
 label{font-weight:600;font-size:14px;display:grid;gap:6px}
 input,textarea,select{font:inherit;padding:11px 13px;border:1.5px solid #cfcfcf;background:#fff;width:100%}
 input:focus,textarea:focus,select:focus{outline:2px solid var(--yellow)}
-form .btn{justify-self:start;cursor:pointer;background:var(--yellow);border-color:var(--yellow)}
+form .btn{justify-self:start;cursor:pointer;background:var(--yellow);border-color:var(--yellow);color:var(--black);font-family:inherit}
 .note{font-size:13px;color:var(--muted)}
 
 /* stopka */
@@ -201,7 +203,7 @@ footer a{color:#d6d6d6}
 
 .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:38px}
 .step{border-top:4px solid var(--yellow);padding-top:16px}
-.step .no{font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:40px;color:var(--yellow);line-height:1}
+.step .no{font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:40px;color:var(--black);line-height:1} /* numer czarny — sekcja biała; żółć zostaje w obrysie górnym (kontrast) */
 .step h3{font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:21px;margin:8px 0 6px}
 .step p{font-size:14.5px;color:#b5b5b5}
 section:not(.dark) .step p{color:var(--muted)}
