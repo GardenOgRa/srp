@@ -21,7 +21,12 @@
   },
   "formularze": {
     "endpoint": "https://n8n.ogrodowiak.pl/webhook/srp-lead",
-    "_instrukcja": "Wklej tu adres webhooka n8n (np. https://n8n.twojadomena.pl/webhook/srp-lead). Pusty = formularze pokazują komunikat, że kanał jest w przygotowaniu, i podają e-mail zapasowy."
+    "_instrukcja": "Wklej tu adres webhooka n8n (np. https://n8n.twojadomena.pl/webhook/srp-lead). Pusty = formularze pokazują komunikat, że kanał jest w przygotowaniu, i podają e-mail zapasowy.",
+    "captcha": {
+      "dostawca": "turnstile",
+      "site_key": "",
+      "_instrukcja": "Ochrona formularzy przed botami. dostawca: \"turnstile\" (Cloudflare, bezpłatny, bez cookies — zalecany) albo \"recaptcha\" (Google reCAPTCHA v2 „Nie jestem robotem”, wymaga dopisku o cookies Google — build robi to sam). site_key = PUBLICZNY klucz witryny. Klucz TAJNY (secret) NIGDY tutaj — tylko w n8n. Pusty site_key = formularze bez widżetu. Po wpisaniu klucza n8n musi sprawdzać token: pole cf-turnstile-response (Turnstile, https://challenges.cloudflare.com/turnstile/v0/siteverify) albo g-recaptcha-response (reCAPTCHA, https://www.google.com/recaptcha/api/siteverify)."
+    }
   },
   "meldunek": {
     "_instrukcja": "Prawdziwe dostawy. Format: data RRRR-MM, model, typ odbiorcy (bez nazwy własnej), region, logo (plik z img/klienci/ lub null). Automat n8n dopisuje tu wpis po zamknięciu dostawy w CRM.",

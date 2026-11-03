@@ -71,10 +71,35 @@ DOMAIN = DOMAIN.strip("/")
 BASE_URL = f"https://{DOMAIN}" if DOMAIN_ACTIVE else "https://ogradost.github.io/srp"
 FORM_ENDPOINT = (SITE.get("formularze", {}) or {}).get("endpoint", "").strip()
 
+# ochrona formularzy przed botami: data/site.json → formularze.captcha
+# dostawca "turnstile" (Cloudflare, bez cookies — zalecany) albo "recaptcha" (Google reCAPTCHA v2).
+# Pusty site_key = brak widżetu (formularze działają jak dotąd). Token MUSI sprawdzać n8n
+# (siteverify z kluczem tajnym) — sam widżet na stronie nie zatrzyma botów piszących prosto na webhook.
+_captcha = ((SITE.get("formularze", {}) or {}).get("captcha", {}) or {})
+CAPTCHA_PROVIDER = (_captcha.get("dostawca") or "turnstile").strip().lower()
+CAPTCHA_KEY = (_captcha.get("site_key") or "").strip() if FORM_ENDPOINT else ""
+if CAPTCHA_KEY and CAPTCHA_PROVIDER == "recaptcha":
+    CAPTCHA_SCRIPT = '<script src="https://www.google.com/recaptcha/api.js?hl=pl" async defer></script>\n'
+    CAPTCHA_WIDGET = f'<div class="g-recaptcha captcha" data-sitekey="{html.escape(CAPTCHA_KEY)}"></div>'
+    CAPTCHA_FIELD = "g-recaptcha-response"
+    CAPTCHA_NAME = "Google reCAPTCHA (Google Ireland Ltd.)"
+elif CAPTCHA_KEY:
+    CAPTCHA_PROVIDER = "turnstile"
+    CAPTCHA_SCRIPT = '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>\n'
+    CAPTCHA_WIDGET = (f'<div class="cf-turnstile captcha" data-sitekey="{html.escape(CAPTCHA_KEY)}" '
+                      'data-language="pl" data-size="flexible"></div>')
+    CAPTCHA_FIELD = "cf-turnstile-response"
+    CAPTCHA_NAME = "Cloudflare Turnstile (Cloudflare, Inc.)"
+else:
+    CAPTCHA_SCRIPT = CAPTCHA_WIDGET = CAPTCHA_FIELD = CAPTCHA_NAME = ""
+
 # atrybuty formularzy: z webhookiem n8n (AJAX) albo tryb "kanał w przygotowaniu"
 if FORM_ENDPOINT:
     form_attrs = f'action="{FORM_ENDPOINT}" method="post" data-lead-form="1"'
-    FORM_NOTE = (f"Odpowiadamy zwykle w ciągu jednego dnia roboczego. Administratorem Twoich danych jest {BRAND}. "
+    FORM_NOTE = (f"Odpowiadamy zwykle w ciągu jednego dnia roboczego. Administratorem Twoich danych jest "
+                 f"{_firma.get('nazwa_pelna') or BRAND}"
+                 + (f", {_firma.get('adres_ulica')}, {_firma.get('adres_miasto')}" if _firma.get('adres_ulica') else "")
+                 + ". "
                  "Podane dane przetwarzamy wyłącznie w celu obsługi tego zapytania i kontaktu w sprawie oferty — "
                  "nie wykorzystujemy ich do marketingu bez osobnej zgody. Masz prawo dostępu do swoich danych, "
                  "ich sprostowania, usunięcia i ograniczenia przetwarzania. "
@@ -425,7 +450,7 @@ FAQS = [
     ("Czy wspieracie zamówienia publiczne?",
      "Tak — przygotowujemy opisy przedmiotu zamówienia z parametrami technicznymi, dostarczamy certyfikaty (TÜV, testy ogniowe EN ISO 6941 / FAR 25.853b) i utrzymujemy warunki oferty w okresie związania. Zobacz sekcję „Zamówienia publiczne”."),
     ("Czy można zobaczyć i przetestować produkty przed zakupem?",
-     "Tak. Organizujemy bezpłatne pokazy w siedzibie klienta — manekiny można wziąć do ręki, przenieść, sprawdzić na własnych noszach i w swoich procedurach. Możliwe są też testy sprzętu przed większym zamówieniem."),
+     "Tak. Zaczynamy od 30-minutowej rozmowy o produkcie (online lub telefonicznie) z filmami instruktażowymi. Pokaz na żywo w siedzibie klienta — manekin do wzięcia do ręki i sprawdzenia na własnych noszach — organizujemy na zapytanie, gdy egzemplarz demonstracyjny jest dostępny. Możliwe są też testy sprzętu przed większym zamówieniem."),
     ("Czy oferujecie leasing lub najem?",
      "Dla instytucji i firm oferujemy finansowanie ratalne, leasing oraz najem długoterminowy [do potwierdzenia z partnerem finansowym]. Napisz — policzymy warianty w wycenie."),
     ("Czy do sprzętu można dokupić szkolenie wdrożeniowe?",
@@ -592,7 +617,7 @@ def thumb_path(f):
     t = os.path.splitext(f)[0] + ".jpg"
     return t if os.path.exists(os.path.join(IMG_DIR, "thumb", t)) else None
 
-def pic(prefix, label, cls="ph", depth=0, thumb=False):
+def pic(prefix, label, cls="ph", depth=0, thumb=False, eager=False):
     """zdjęcie z img/ (największe dla prefiksu) albo placeholder; prefix może być
     też konkretną nazwą pliku (z kropką). thumb=True -> miniatura do kart/kafli."""
     p = "../" * depth
@@ -600,7 +625,8 @@ def pic(prefix, label, cls="ph", depth=0, thumb=False):
     if f and os.path.exists(os.path.join(IMG_DIR, f)):
         t = thumb_path(f) if thumb else None
         src = f"{p}img/thumb/{t}" if t else f"{p}img/{f}"
-        return (f'<div class="{cls} has-img"><img src="{src}" alt="{esc(label)}" loading="lazy" decoding="async"></div>')
+        load = 'loading="eager" fetchpriority="high"' if eager else 'loading="lazy" decoding="async"'
+        return (f'<div class="{cls} has-img"><img src="{src}" alt="{esc(label)}" {load}></div>')
     return placeholder(label, cls)
 
 DESC_DOMYSLNY = ("Szwedzkie manekiny ratownicze i symulatory ran SRP — wyłączny dystrybutor w Polsce. "
@@ -610,7 +636,7 @@ DESC_DOMYSLNY = ("Szwedzkie manekiny ratownicze i symulatory ran SRP — wyłąc
 # Podstawiane w seo_postprocess() po ścieżce pliku — dzięki temu nie trzeba ruszać każdej funkcji strony.
 SEO_OPISY = {
     "index.html": "Manekiny ratownicze i symulatory ran SRP ze Szwecji. Wyłączny dystrybutor w Polsce: "
-                  "sprzedaż, pokazy, serwis i szkolenia dla straży, wojska i ratownictwa.",
+                  "jawne ceny, sprzedaż, serwis i szkolenia dla straży, wojska i ratownictwa.",
     "produkty/index.html": "Katalog manekinów ratowniczych SRP: modele Standard, PRO, RKO, wodne i ogniowe "
                            "oraz symulatory ran. Parametry, masy, zastosowania i wycena.",
     "cennik.html": "Cennik manekinów ratowniczych i symulatorów ran SRP: ceny netto i brutto w PLN, "
@@ -645,7 +671,10 @@ SEO_OPISY = {
                 "główną SRP Polska.",
 }
 
-def head(title, depth=0, desc=None):
+TEL_HREF = "tel:" + PHONE.replace(" ", "")
+WA_HREF = "https://wa.me/" + "".join(ch for ch in PHONE if ch.isdigit())
+
+def head(title, depth=0, desc=None, captcha=False):
     p = "../" * depth
     d = " ".join((desc or DESC_DOMYSLNY).split())[:300]
     return f"""<!DOCTYPE html>
@@ -658,36 +687,40 @@ def head(title, depth=0, desc=None):
 <link rel="icon" type="image/svg+xml" href="{p}img/srp-logo.svg">
 <meta property="og:title" content="{esc(title)} | {BRAND}">
 <meta property="og:description" content="{esc(d)}">
-<meta property="og:image" content="{BASE_URL}/img/home-01.jpg">
+<meta property="og:image" content="{BASE_URL}/img/home-02.jpg">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="pl_PL">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="{p}css/style.css">
-</head>
+{CAPTCHA_SCRIPT if captcha else ""}</head>
 <body>
 <header class="topbar">
   <div class="wrap nav-wrap">
     <a class="logo" href="{p}index.html"><img class="logo-img" src="{p}img/srp-logo.svg" alt="SRP — Svenska Räddningsprodukter"></a>
-    <input type="checkbox" id="nav-toggle" hidden><label for="nav-toggle" class="burger" aria-label="Menu">☰</label>
-    <nav>
+    <button type="button" class="burger" aria-label="Otwórz menu" aria-expanded="false" aria-controls="menu-glowne"><span aria-hidden="true">☰</span></button>
+    <nav id="menu-glowne">
       <a href="{p}produkty/index.html">Produkty</a>
+      <a href="{p}cennik.html">Cennik</a>
       <a href="{p}dla-kogo.html">Dla kogo</a>
       <a href="{p}szkolenia.html">Szkolenia</a>
-      <a href="{p}index.html#meldunek">Meldunek</a>
       <a href="{p}zamowienia-publiczne.html">Przetargi</a>
       <a href="{p}wiedza/index.html">Wiedza</a>
       <a href="{p}o-nas.html">O nas</a>
       <a href="{p}kontakt.html">Kontakt</a>
+      <a class="nav-tel" href="{TEL_HREF}">{PHONE}</a>
       <a class="nav-cta" href="{p}zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę / wycena</a>
     </nav>
   </div>
 </header>
 """
 
-def footer(depth=0):
+def footer(depth=0, cta=True):
+    """cta=False na stronach z formularzem zapytania — tam przyklejony pasek tylko by zasłaniał pola."""
     p = "../" * depth
+    sticky = (f'<div class="sticky-cta"><a href="{TEL_HREF}" class="btn">Zadzwoń</a>'
+              f'<a href="{p}zapytanie-ofertowe.html" class="btn solid">Zapytaj o wycenę</a></div>\n') if cta else ""
     return f"""
-<footer>
+{sticky}<footer{' class="has-cta"' if cta else ''}>
   <div class="wrap foot-grid">
     <div>
       <h4>{BRAND}</h4>
@@ -703,11 +736,11 @@ def footer(depth=0):
     </div>
     <div>
       <h4>Na skróty</h4>
-      <p><a href="{p}produkty/index.html">Produkty</a><br>
+      <p class="links"><a href="{p}produkty/index.html">Produkty</a><br>
       <a href="{p}cennik.html">Cennik</a><br>
       <a href="{p}porownanie-manekinow.html">Porównanie modeli</a><br>
       <a href="{p}dla-kogo.html">Rozwiązania dla branż</a><br>
-      <a href="{p}index.html#meldunek">Meldunek: fantomy w służbie</a><br>
+      {f'<a href="{p}index.html#meldunek">Meldunek: fantomy w służbie</a><br>' if DEPLOYMENTS else ''}
       <a href="{p}zamowienia-publiczne.html">Zamówienia publiczne</a><br>
       <a href="{p}do-pobrania.html">Do pobrania</a><br>
       <a href="{p}wiedza/index.html">Strefa wiedzy</a><br>
@@ -722,25 +755,41 @@ def footer(depth=0):
   <div class="wrap copyright">© {BRAND}. Produkty SRP® są znakiem towarowym Svenska Räddningsprodukter AB. MADE IN SWEDEN.</div>
 </footer>
 <script>
+/* menu mobilne: przycisk z aria-expanded, ikona ☰ / ✕ */
+(function(){{
+  var b=document.querySelector('.burger'), n=document.getElementById('menu-glowne'); if(!b||!n) return;
+  function set(open){{ b.setAttribute('aria-expanded',open); b.setAttribute('aria-label',open?'Zamknij menu':'Otwórz menu');
+    b.firstElementChild.textContent=open?'✕':'☰'; n.classList.toggle('open',open); }}
+  b.addEventListener('click',function(){{ set(b.getAttribute('aria-expanded')!=='true'); }});
+  document.addEventListener('keydown',function(e){{ if(e.key==='Escape') set(false); }});
+}})();
 /* wysyłka formularzy do webhooka n8n (bez przeładowania strony) */
 (function(){{
-  if(location.search.indexOf('rozmowa=1')>-1){{ var d=document.querySelector('input[name=demo]'); if(d){{ d.checked=true; var fm=d.closest('form'); if(fm) fm.scrollIntoView({{block:'start'}}); }} }}
+  var CAPTCHA='{CAPTCHA_FIELD}', PROV='{CAPTCHA_PROVIDER if CAPTCHA_FIELD else ""}';
+  function resetCaptcha(f){{
+    var w=f.querySelector('.captcha'); if(!w) return;
+    try{{ if(PROV==='turnstile'&&window.turnstile) turnstile.reset(w);
+         if(PROV==='recaptcha'&&window.grecaptcha) grecaptcha.reset(); }}catch(e){{}}
+  }}
   document.querySelectorAll('form[data-lead-form="1"]').forEach(function(f){{
     f.addEventListener('submit', function(ev){{
       ev.preventDefault();
+      if(f.dataset.check && window[f.dataset.check] && !window[f.dataset.check](f)) return;
       var btn=f.querySelector('button[type=submit]'), old=btn?btn.innerHTML:'';
-      if(btn){{ btn.disabled=true; btn.innerHTML='Wysyłanie…'; }}
       var fd=new FormData(f), data={{}};
       fd.forEach(function(v,k){{ data[k]= data[k] ? [].concat(data[k],v) : v; }});
       if(data.website){{ f.innerHTML='<div class="form-ok"><strong>Dziękujemy.</strong></div>'; return; }} /* pułapka na boty */
       delete data.website;
+      if(CAPTCHA && f.querySelector('.captcha') && !data[CAPTCHA]){{
+        alert('Zaznacz potwierdzenie, że nie jesteś robotem (pole nad przyciskiem), i wyślij ponownie.'); return; }}
+      if(btn){{ btn.disabled=true; btn.innerHTML='Wysyłanie…'; }}
       data._strona=location.pathname; data._czas=new Date().toISOString();
       fetch(f.action,{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify(data)}})
         .then(function(r){{ if(!r.ok) throw 0;
           f.innerHTML = (data.typ==='newsletter')
             ? '<div class="form-ok"><strong>Dziękujemy — jesteś na liście.</strong><p>Materiały wysyłamy najwyżej raz w miesiącu. Zgodę możesz wycofać w każdej chwili.</p></div>'
-            : '<div class="form-ok"><strong>Dziękujemy — zapytanie dotarło.</strong><p>Odpowiadamy zwykle w ciągu jednego dnia roboczego.</p></div>'; }})
-        .catch(function(){{ if(btn){{ btn.disabled=false; btn.innerHTML=old; }}
+            : '<div class="form-ok" role="status"><strong>Dziękujemy — odezwiemy się w ciągu 1 dnia roboczego.</strong><p>Pilne? Zadzwoń: <a href="{TEL_HREF}">{PHONE}</a>.</p></div>'; }})
+        .catch(function(){{ if(btn){{ btn.disabled=false; btn.innerHTML=old; }} resetCaptcha(f);
           alert('Nie udało się wysłać. Napisz na {EMAIL} lub zadzwoń: {PHONE}.'); }});
     }});
   }});
@@ -1113,47 +1162,145 @@ form .consent{flex-basis:100%}
 @media(max-width:960px){
   .grid3,.grid4{grid-template-columns:repeat(2,1fr)}
   .grid2,.prod-grid,.foot-grid{grid-template-columns:1fr}
-  nav{display:none;position:absolute;top:78px;left:0;right:0;background:var(--black);flex-direction:column;padding:20px;align-items:flex-start}
-  #nav-toggle:checked ~ nav{display:flex}
-  .burger{display:block}
+}
+/* menu: burger już poniżej 1100 px — przy ~1000 px przycisk CTA spadał do drugiego wiersza */
+@media(max-width:1100px){
+  nav{display:none;position:absolute;top:78px;left:0;right:0;background:var(--black);flex-direction:column;padding:12px 24px 22px;align-items:stretch;gap:0;max-height:calc(100vh - 78px);overflow-y:auto}
+  nav.open{display:flex}
+  nav a{padding:13px 0;border-bottom:1px solid #262626;font-size:15px}
+  nav a.nav-cta{margin-top:14px;text-align:center;border-bottom:0}
+  .burger{display:flex}
 }
 @media(max-width:600px){.grid3,.grid4{grid-template-columns:1fr}}
+
+/* --- poprawki UX 11.2026 --- */
+img{height:auto}
+.prod-grid>*,.grid2>*,.grid3>*,.grid4>*{min-width:0}
+.specs-wrap{overflow-x:auto}
+.burger{align-items:center;justify-content:center;width:48px;height:48px;font-size:26px;color:#fff;background:none;border:0;cursor:pointer;font-family:inherit}
+.nav-tel{white-space:nowrap}
+@media(min-width:1101px){nav{flex-wrap:nowrap;gap:18px}nav a{white-space:nowrap;letter-spacing:.6px}.nav-tel{display:none}}
+@media(min-width:1360px){nav{gap:22px}nav a{letter-spacing:1px}.nav-tel{display:inline}}
+.btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+.card .btn,.seg .btn{min-height:44px}
+.seg .tags a{padding:10px 12px;min-height:44px;display:inline-flex;align-items:center}
+footer .links a{display:inline-block;padding:5px 0}
+footer .links{line-height:1.9}
+.cena-t.full .vat{display:none}
+.price-from{font-weight:700;color:var(--ink);font-size:15px}
+.price-from b{font-size:17px}
+section.dark .price-from{color:#fff}
+.prod-facts{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13.5px;color:var(--muted);margin:-6px 0 18px}
+.prod-actions{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 8px}
+.captcha{margin:4px 0}
+.newsletter .captcha{flex-basis:100%}
+details.more{border:1px solid var(--line);padding:0 18px;background:#fff}
+details.more>summary{cursor:pointer;font-weight:700;padding:14px 0;min-height:44px}
+details.more[open]>summary{border-bottom:1px solid var(--line);margin-bottom:16px}
+details.more>.inner{display:grid;gap:16px;padding-bottom:18px}
+.quote-only{display:none}
+.rozmowa .tylko-pelny{display:none}
+.rozmowa .quote-only{display:block}
+.rozmowa summary .quote-only{display:inline}
+.who-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:30px}
+.who-tile{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);background:#fff;padding:20px 22px;text-decoration:none;border-left:5px solid var(--yellow);min-height:44px}
+.who-tile strong{font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:21px;text-transform:uppercase;line-height:1.1}
+.who-tile span{font-size:14px;color:var(--muted)}
+.who-tile:hover{background:#fffdf0}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:30px}
+.fact{border-top:4px solid var(--yellow);padding-top:12px}
+.fact b{display:block;font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:30px;line-height:1.1;text-transform:uppercase}
+.fact span{font-size:14px;color:var(--muted)}
+.press{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:30px}
+.press figure{border:1px solid var(--line);background:#fff}
+.press img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.press figcaption{font-size:12.5px;color:var(--muted);padding:8px 10px;text-transform:uppercase;letter-spacing:.5px}
+.picker{background:#fff;border:2px solid var(--black);padding:26px 28px;margin-bottom:40px}
+.picker h2{font-size:clamp(26px,3.4vw,36px);margin-bottom:6px}
+.picker fieldset{border:0;margin-top:18px}
+.picker legend{font-weight:700;margin-bottom:8px}
+.picker .opts{display:flex;flex-wrap:wrap;gap:8px}
+.picker .opts label{display:inline-flex;align-items:center;gap:8px;border:1.5px solid #cfcfcf;padding:10px 14px;font-weight:600;cursor:pointer;min-height:44px}
+.picker .opts input{width:auto}
+.picker .opts label:has(input:checked){border-color:var(--black);background:var(--yellow)}
+.picker-out{margin-top:22px;display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.pick{border:1px solid var(--line);border-left:5px solid var(--yellow);padding:18px 20px;display:flex;flex-direction:column;gap:8px}
+.pick h3{font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:22px;margin:0}
+.pick p{font-size:14.5px;color:var(--muted)}
+.pick .row{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.contact-quick{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.btn.wa{background:#25D366;border-color:#25D366;color:#0d0d0d}
+.hero .sub{font-family:'Barlow Condensed';font-style:italic;font-weight:600;font-size:clamp(20px,2.6vw,28px);color:#fff;text-transform:uppercase;margin-top:14px}
+.hero .hero-title .disp{font-size:clamp(38px,6vw,76px)}
+.hero .btns{display:flex;flex-wrap:wrap;gap:12px}
+.sticky-cta{display:none}
+@media(max-width:960px){.facts,.press{grid-template-columns:repeat(2,1fr)}.who-grid{grid-template-columns:repeat(2,1fr)}.picker-out{grid-template-columns:1fr}}
+@media(max-width:640px){
+  .who-grid{grid-template-columns:1fr}
+  .hero{padding:72px 0 80px}
+  .sticky-cta{display:flex;gap:8px;position:fixed;left:0;right:0;bottom:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:#111;z-index:60;box-shadow:0 -2px 10px rgba(0,0,0,.35)}
+  .sticky-cta .btn{flex:1;text-align:center;min-height:44px;padding:10px 8px;color:#fff}
+  .sticky-cta .btn.solid{color:var(--black)}
+  footer.has-cta{padding-bottom:96px}
+  /* cennik: tabela -> karty */
+  .cena-t thead{display:none}
+  .cena-t,.cena-t tbody,.cena-t tr,.cena-t td{display:block;width:100%}
+  .cena-t tr{border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:12px}
+  .cena-t td{border:0;padding:3px 0;text-align:left}
+  .cena-t td.num{display:inline-block;width:auto;margin-right:18px;text-align:left}
+  .cena-t .act{text-align:left}
+  .cena-t .act .btn{display:flex;width:100%;margin-top:8px}
+  .cena-t.full .vat{display:inline;margin-left:5px}
+  .cena-t .vat{display:inline;margin-left:5px}
+  .cena-t tr:last-child td{border-bottom:0}
+  .cena{padding:14px 14px}
+  .gallery{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .facts,.press{grid-template-columns:1fr 1fr}
+  .picker{padding:20px 16px}
+}
 """
 
 # ---------------------------------------------------------------- strony
+def cena_od(slug):
+    """„od X zł brutto” z cennika; '' gdy brak ceny"""
+    c = cennik_dla(slug)
+    if not c:
+        return ""
+    return f'<p class="price-from">od <b>{cena_pln(min(x["brutto"] for x in c))}</b> brutto</p>'
+
+# kluczowe produkty na stronie głównej (pełny katalog: produkty/index.html)
+HOME_PRODUCTS = ["manekin-pro-elite-military", "manekin-pro-elite", "manekin-pro",
+                 "manekin-standard", "manekin-rko", "symulatory-ran"]
+
+def product_card(p, depth=0, prefix="produkty/"):
+    return (f'<div class="card">{pic(p["slug"], p["name"], depth=depth, thumb=True)}<div class="body"><h3>{esc(p["name"])}</h3>'
+            f'<p>{esc(p["short"])}</p>{cena_od(p["slug"])}{btn(prefix + p["slug"] + ".html", "Zobacz produkt")}</div></div>')
+
 def page_home():
-    cards = "\n".join(
-        f'<div class="card">{pic(p["slug"], p["name"], thumb=True)}<div class="body"><h3>{esc(p["name"])}</h3>'
-        f'<p>{esc(p["short"])}</p>{btn("produkty/" + p["slug"] + ".html", "Czytaj więcej")}</div></div>'
-        for p in PRODUCTS
-    )
-    courses = "\n".join(f'<div class="course"><span class="course-ico">{i}</span><h3>{esc(n)}</h3><p>{esc(d)}</p></div>' for i, n, d in COURSES)
     by_slug = {p["slug"]: p for p in PRODUCTS}
-    segs = "\n".join(
-        f'<div class="seg"><h3>{esc(s["name"])}</h3><p>{esc(s["desc"])}</p><div class="tags">'
-        + "".join(f'<a href="produkty/{sl}.html">{esc(by_slug[sl]["name"].replace("Manekin ratowniczy ", "").replace("Manekin do ", ""))}</a>' for sl in s["products"])
-        + f'</div><a class="btn" href="dla-kogo.html#{s["anchor"]}" style="align-self:flex-start;font-size:11.5px;padding:9px 16px">Czytaj więcej <span class="arr">→</span></a></div>'
+    cards = "\n".join(product_card(by_slug[s]) for s in HOME_PRODUCTS if s in by_slug)
+    who = "\n".join(
+        f'<a class="who-tile" href="dla-kogo.html#{s["anchor"]}"><strong>{esc(s["name"])}</strong>'
+        f'<span>{esc(", ".join(by_slug[sl]["name"].replace("Manekin ratowniczy ", "").replace("Manekin do ", "").replace("Manekiny do ", "") for sl in s["products"][:3]))} →</span></a>'
         for s in SEGMENTS
     )
     faqs = "\n".join(f'<details class="faq"><summary>{esc(q)}</summary><p>{esc(a)}</p></details>' for q, a in FAQS[:4])
-    # kotwica #meldunek zawsze istnieje (nawigacja i stopka do niej linkują) — bez wpisów pokazujemy uczciwy stan pusty
-    deploys_html = render_meldunek(DEPLOYMENTS) if DEPLOYMENTS else render_meldunek_pusty()
+    # Meldunek pokazujemy dopiero od pierwszego prawdziwego wpisu (pusta sekcja w menu wyglądała jak błąd)
+    deploys_html = render_meldunek(DEPLOYMENTS) if DEPLOYMENTS else ""
+    quotes = ""
     if TESTIMONIALS:
         quotes = ('<div class="grid3" style="margin-top:36px">' + "\n".join(
             f'<div class="quote"><p>„{esc(t)}”</p><div class="who">{esc(n)}<span>{esc(o)}</span></div></div>'
-            for t, n, o in TESTIMONIALS) + "</div>") + deploys_html
-    elif DEPLOYMENTS:
-        quotes = deploys_html
-    else:
-        quotes = """<div class="refbox">
-      <h3>Twoja jednostka może być naszą pierwszą polską referencją</h3>
-      <p>Rozpoczynamy dystrybucję w Polsce i budujemy listę referencyjną. Porozmawiaj z nami o swoich
-      scenariuszach ćwiczeń, przetestuj sprzęt w swoich procedurach — a jeśli spełni oczekiwania, Twoja
-      opinia pojawi się w tym miejscu.</p>
-      <a class="btn solid" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę o produkcie <span class="arr">→</span></a>
-    </div>""" + deploys_html
-    hero_bg = ('style="background-image:linear-gradient(rgba(10,12,8,.55),rgba(10,12,8,.7)),'
-               "url('img/home-01.jpg');background-size:cover;background-position:center\"") if main_image("home") else ""
+            for t, n, o in TESTIMONIALS) + "</div>")
+    press = [("home-10.jpg", "Dagens Nyheter — szkolenia z tamowania krwotoków"),
+             ("home-11.jpg", "Kongres strażaków Francji, Tuluza 2023"),
+             ("home-12.jpg", "Targi Enforce Tac, Norymberga"),
+             ("home-09.png", "Członek SOFF — szwedzkiego przemysłu obronnego")]
+    press_html = '<div class="press">' + "".join(
+        f'<figure><img src="img/{f}" alt="{esc(c)}" loading="lazy" decoding="async"><figcaption>{esc(c)}</figcaption></figure>'
+        for f, c in press if os.path.exists(os.path.join(IMG_DIR, f))) + "</div>"
+    hero_bg = ('style="background-image:linear-gradient(rgba(10,12,8,.5),rgba(10,12,8,.72)),'
+               "url('img/home-02.jpg');background-size:cover;background-position:center\"")
     org_ld = json.dumps({
         "@context": "https://schema.org", "@type": "Organization",
         "name": BRAND, "description": DISTRIBUTOR, "url": BASE_URL,
@@ -1170,13 +1317,13 @@ def page_home():
 <script type="application/ld+json">{org_ld}</script>
 <div class="hero" {hero_bg}>
   <div class="wrap">
-    <h1 class="hero-title"><span class="kicker">Przenieś swój trening ratowniczy</span>
-    <span class="disp">na wyższy<br><span class="solid">poziom</span></span></h1>
-    <p>Szukasz sprzętu treningowego najwyższej jakości? Jesteśmy wyłącznym dystrybutorem szwedzkich
-    manekinów ratowniczych i symulatorów ran SRP w Polsce. Skontaktuj się z nami, aby poznać
-    właściwości produktów, ceny i dostępność.</p>
-    <a class="btn solid" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę o produkcie <span class="arr">→</span></a>
-    &nbsp; {btn("cennik.html", "Zobacz cennik")}
+    <h1 class="hero-title"><span class="disp">Szwedzkie <span class="solid">manekiny ratownicze</span> i symulatory ran</span>
+    <span class="kicker">— wyłączny dystrybutor w Polsce</span></h1>
+    <p class="sub">Przenieś swój trening ratowniczy na wyższy poziom</p>
+    <p>Ręcznie wykonywany w Szwecji sprzęt dla straży, wojska, ratownictwa medycznego i wodnego.
+    Ceny są jawne — zobacz cennik albo zapytaj o pakiet ze szkoleniem i dokumenty do przetargu.</p>
+    <div class="btns"><a class="btn solid" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę o produkcie <span class="arr">→</span></a>
+    {btn("cennik.html", "Zobacz cennik")}</div>
   </div>
 </div>
 
@@ -1188,95 +1335,63 @@ def page_home():
   <span>Wsparcie zamówień publicznych</span>
 </div></div>
 
-<section>
-  <div class="wrap grid3">
-    <div class="card">{pic("home-02.jpg", "Manekiny ratownicze", thumb=True)}<div class="body">
-      <h3>Manekiny ratownicze</h3><p>Wysokiej jakości manekiny do ćwiczeń na lądzie i w wodzie — od ewakuacji w dymie po scenariusze taktyczno-medyczne.</p>
-      {btn("produkty/index.html", "Czytaj więcej")}</div></div>
-    <div class="card">{pic("szkolenia", "Szkolenia", thumb=True)}<div class="body">
-      <h3>Szkolenia</h3><p>Kursy RKO, pierwszej pomocy i kontroli krwotoków prowadzone przez certyfikowanych instruktorów z doświadczeniem operacyjnym.</p>
-      {btn("szkolenia.html", "Czytaj więcej")}</div></div>
-    <div class="card">{pic("symulatory-ran", "Symulatory ran", thumb=True)}<div class="body">
-      <h3>Symulatory ran</h3><p>Bardzo realistyczne symulatory obrażeń do szkoleń z tamowania krwotoków — staza, packing, opatrunek uciskowy.</p>
-      {btn("produkty/symulatory-ran.html", "Czytaj więcej")}</div></div>
-  </div>
-</section>
-
-<section class="dark">
-  <div class="wrap grid2">
-    <div>
-      <span class="badge">Witamy</span>
-      <h2>Szwedzka jakość.<br>Polska dystrybucja.</h2>
-      <p class="lead">Svenska Räddningsprodukter AB to szwedzki producent symulatorów ran i manekinów
-      treningowych najwyższej jakości — do zastosowań lądowych i wodnych. Od 2009 roku firma rozwija
-      i wytwarza ręcznie swoje produkty w Sali (Västmanland), z myślą o profesjonalistach z ratownictwa,
-      ochrony zdrowia, wojska i służb mundurowych.</p>
-      <p class="lead" style="margin-top:14px">Jako wyłączny dystrybutor SRP w Polsce zapewniamy doradztwo,
-      sprzedaż, serwis i szkolenia z użyciem oryginalnego sprzętu.</p>
-    </div>
-    {pic("home-12.jpg", "Produkcja SRP", "ph tall", thumb=True)}
-  </div>
-</section>
-
-<section class="gray">
-  <div class="wrap">
-    <span class="badge">Made in Sweden</span>
-    <h2>Produkty do realistycznego treningu ratowniczego</h2>
-    <p class="lead">Manekiny SRP odwzorowują rzeczywiste ciało człowieka pod względem masy, ruchomości
-    stawów i oporu. Dzięki temu sprawdzają się w najbardziej wymagających ćwiczeniach: przeszukiwaniu
-    pomieszczeń w dymie, ewakuacji, ratownictwie wodnym i taktycznej opiece nad poszkodowanym.</p>
-    <div class="grid4" style="margin-top:40px">{cards}</div>
-  </div>
-</section>
-
-<section>
-  <div class="wrap grid2">
-    <div>
-      <span class="badge">Jasny cel</span>
-      <h2>Żeby na ostro czuło się jak za drugim razem</h2>
-      <p class="lead">Cała filozofia rozwoju produktów SRP sprowadza się do jednego: trening ma być tak
-      realistyczny, żeby prawdziwa sytuacja była już „tym drugim razem”. Ręcznie wykonywane produkty
-      z logo SRP to znak jakości — funkcjonalności, realizmu i trwałości.</p>
-    </div>
-    {pic("home-06.jpg", "Ćwiczenia służb ratowniczych z manekinem SRP", thumb=True)}
-  </div>
-</section>
-
-<section class="dark">
-  <div class="wrap">
-    <span class="badge">Szkolenia</span>
-    <h2>Instruktorzy z doświadczeniem operacyjnym</h2>
-    <p class="lead">Oferujemy szkolenia prowadzone przez instruktorów z międzynarodowymi certyfikatami
-    Stop the Bleed®, ERC i TECC oraz wieloletnim doświadczeniem w służbach interwencyjnych —
-    od podstawowej RKO po taktyczną opiekę nad poszkodowanym.</p>
-    <div class="grid3" style="margin-top:36px">{courses}</div>
-    <div style="margin-top:36px">{btn("szkolenia.html", "Zobacz wszystkie szkolenia")}</div>
-  </div>
-</section>
-
-<section>
-  <div class="wrap">
-    <span class="badge">Zaufanie i opinie</span>
-    <h2>Sprawdzeni w codziennej służbie</h2>
-    <p class="lead">Produkty SRP od 2009 roku pracują na co dzień w jednostkach straży pożarnej,
-    policji, wojska, ratownictwa medycznego i morskiego — wszędzie tam, gdzie sprzęt musi wytrzymać
-    setki ćwiczeń rocznie. Producent został wyróżniony m.in. nagrodą zrównoważonego rozwoju (2025),
-    a jego rozwiązania opisywały media branżowe i ogólnokrajowe w Szwecji.</p>
-    {quotes}
-  </div>
-</section>
-
 <section class="gray">
   <div class="wrap">
     <span class="badge">Dla kogo</span>
-    <h2>Rozwiązania dopasowane do Twojej służby</h2>
-    <p class="lead">Inne potrzeby ma rota gaśnicza, inne zespół medyczny, a jeszcze inne ośrodek
-    szkoleniowy. Zobacz, co sprawdza się w Twojej branży.</p>
-    <div class="grid3" style="margin-top:36px">{segs}</div>
+    <h2>Kim jesteś?</h2>
+    <p class="lead">Wybierz swoją służbę — pokażemy, od czego warto zacząć.</p>
+    <div class="who-grid">{who}</div>
   </div>
 </section>
 
 <section>
+  <div class="wrap">
+    <span class="badge">Made in Sweden</span>
+    <h2>Najczęściej wybierane</h2>
+    <p class="lead">Manekiny SRP odwzorowują ciało człowieka pod względem masy, ruchomości stawów i oporu —
+    od ewakuacji w dymie po taktyczną opiekę nad poszkodowanym.</p>
+    <div class="grid3" style="margin-top:34px">{cards}</div>
+    <div class="prod-actions" style="margin-top:28px">{btn("produkty/index.html", "Wszystkie produkty")}
+    <a class="btn" href="porownanie-manekinow.html#dobor">Dobierz manekin w 3 pytaniach <span class="arr">→</span></a></div>
+  </div>
+</section>
+
+<section class="dark">
+  <div class="wrap grid2">
+    <div>
+      <span class="badge">Szwedzka jakość</span>
+      <h2>Żeby na ostro czuło się jak za drugim razem</h2>
+      <p class="lead">Svenska Räddningsprodukter AB od 2009 roku ręcznie wytwarza manekiny i symulatory ran
+      w Sali w Szwecji. Jako wyłączny dystrybutor zapewniamy w Polsce doradztwo, sprzedaż, serwis i szkolenia.</p>
+      <p class="lead" style="margin-top:14px">Szkolenia RKO, pierwszej pomocy, Stop the Bleed® i TECC prowadzą
+      instruktorzy z doświadczeniem operacyjnym — na tym samym sprzęcie.</p>
+      <div class="prod-actions" style="margin-top:22px">{btn("szkolenia.html", "Szkolenia")} {btn("o-nas.html", "O producencie")}</div>
+    </div>
+    {pic("home-04.jpg", "Ćwiczenia służb ratowniczych z manekinem SRP", "ph", thumb=True)}
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="badge">Zaufanie</span>
+    <h2>Sprawdzone w codziennej służbie</h2>
+    <p class="lead">Produkty SRP pracują w jednostkach straży pożarnej, policji, wojska, ratownictwa
+    medycznego i morskiego — tam, gdzie sprzęt musi wytrzymać setki ćwiczeń rocznie.</p>
+    <div class="facts">
+      <div class="fact"><b>Od 2009</b><span>ręczna produkcja w Szwecji</span></div>
+      <div class="fact"><b>TÜV</b><span>certyfikat, testy ogniowe EN ISO 6941 i FAR 25.853b</span></div>
+      <div class="fact"><b>NATO</b><span>numery NSN, kod NCAGE producenta AE82N</span></div>
+      <div class="fact"><b>Do 20 lat</b><span>gwarancji na wybrane produkty, serwis w Polsce</span></div>
+    </div>
+    {press_html}
+    {quotes}
+    {deploys_html}
+    <p class="lead" style="margin-top:30px">Chcesz sprawdzić sprzęt w swoich procedurach przed zakupem? Porozmawiajmy o testach.</p>
+    <div style="margin-top:14px"><a class="btn solid" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę o produkcie <span class="arr">→</span></a></div>
+  </div>
+</section>
+
+<section class="gray">
   <div class="wrap">
     <span class="badge">Proces zakupu</span>
     <h2>Od pierwszej rozmowy do gotowego ośrodka ćwiczeń</h2>
@@ -1293,7 +1408,7 @@ def page_home():
   </div>
 </section>
 
-<section class="gray">
+<section>
   <div class="wrap">
     <span class="badge">FAQ</span>
     <h2>Najczęstsze pytania kupujących</h2>
@@ -1309,26 +1424,25 @@ def page_home():
     materiały dla instruktorów — maksymalnie raz w miesiącu, bez spamu.</p>
     <form {form_attrs}>
   <div class="hp" aria-hidden="true"><label>Strona www <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
-      <input type="email" name="email" placeholder="Twój adres e-mail" required>
+      <input type="email" name="email" placeholder="Twój adres e-mail" autocomplete="email" required>
       <button class="btn" type="submit">Zapisz się</button>
     <input type="hidden" name="typ" value="newsletter">
     <label class="consent"><input type="checkbox" name="zgoda_marketing" required> <span>Chcę otrzymywać materiały i informacje o produktach oraz szkoleniach na podany adres e-mail. Zgodę mogę wycofać w każdej chwili, a jej brak nie wpływa na możliwość kontaktu z nami. <a href="/polityka-prywatnosci.html">Informacja o przetwarzaniu danych</a>.</span></label>
+    {CAPTCHA_WIDGET}
     </form>
   </div>
 </div>
 """
-    return head("Manekiny ratownicze i symulatory ran SRP") + body + footer()
+    return head("Manekiny ratownicze i symulatory ran SRP", captcha=True) + body + footer()
 
 def page_products_index():
-    cards = "\n".join(
-        f'<div class="card">{pic(p["slug"], p["name"], depth=1, thumb=True)}<div class="body"><h3>{esc(p["name"])}</h3>'
-        f'<p>{esc(p["short"])}</p>{btn(p["slug"] + ".html", "Czytaj więcej")}</div></div>'
-        for p in PRODUCTS
-    )
+    cards = "\n".join(product_card(p, depth=1, prefix="") for p in PRODUCTS)
     body = f"""
 <div class="page-head"><div class="wrap"><h1>Produkty</h1>
 <p>Szwedzkie manekiny ratownicze, symulatory ran i trenażery medyczne SRP — ręcznie wykonane,
-przetestowane w praktyce, zaprojektowane na lata intensywnych ćwiczeń.</p></div></div>
+przetestowane w praktyce, zaprojektowane na lata intensywnych ćwiczeń.</p>
+<div class="prod-actions" style="margin-top:20px"><a class="btn solid" href="../porownanie-manekinow.html#dobor">Który manekin wybrać? Dobór w 3 pytaniach <span class="arr">→</span></a>
+<a class="btn" href="../cennik.html">Cennik</a></div></div></div>
 <section><div class="wrap grid3">{cards}</div></section>
 """
     return head("Manekiny ratownicze i fantomy — katalog", 1) + body + footer(1)
@@ -1363,11 +1477,11 @@ def page_cennik():
         prod = by_slug.get(c["slug"])
         link = f'<a href="produkty/{c["slug"]}.html">{esc(prod["name"])}</a>' if prod else ""
         kup = (f'<a class="btn mini" href="{esc(c["sklep"])}" target="_blank" rel="noopener">Zamów w sklepie</a>'
-               if c["netto"] < prog and c.get("sklep") else '<a class="btn mini" href="zapytanie-ofertowe.html">Zapytaj o ofertę</a>')
-        rows.append(f'<tr><td>{esc(c["nazwa"])}<div class="meta">{link}</div></td><td class="num"><b>{cena_pln(c["netto"])}</b></td>'
-                    f'<td class="num">{cena_pln(c["brutto"])}</td><td class="act">{kup}</td></tr>')
+               if c["netto"] < prog and c.get("sklep") else f'<a class="btn mini" href="zapytanie-ofertowe.html?produkt={c["slug"]}">Zapytaj o ofertę</a>')
+        rows.append(f'<tr><td>{esc(c["nazwa"])}<div class="meta">{link}</div></td><td class="num"><b>{cena_pln(c["netto"])}</b><span class="vat">netto</span></td>'
+                    f'<td class="num">{cena_pln(c["brutto"])}<span class="vat">brutto</span></td><td class="act">{kup}</td></tr>')
     nz = "".join(f'<tr><td><a href="produkty/{s}.html">{esc(by_slug[s]["name"])}</a><div class="meta">{esc(t)}</div></td>'
-                 f'<td class="num" colspan="2">na zapytanie</td><td class="act"><a class="btn mini" href="zapytanie-ofertowe.html">Zapytaj o ofertę</a></td></tr>'
+                 f'<td class="num" colspan="2">na zapytanie</td><td class="act"><a class="btn mini" href="zapytanie-ofertowe.html?produkt={s}">Zapytaj o ofertę</a></td></tr>'
                  for s, t in (CENNIK.get("na_zapytanie", {}) or {}).items() if s in by_slug)
     body = f"""
 <div class="page-head"><div class="wrap"><h1>Cennik</h1>
@@ -1388,7 +1502,7 @@ Pakiety ze szkoleniem, zamówienia publiczne, leasing i większe ilości — wyc
 def page_product(p):
     feats = "\n".join(f"<li>{esc(f)}</li>" for f in p["features"])
     specs = "\n".join(f"<tr><th>{esc(k)}</th><td>{esc(v)}</td></tr>" for k, v in p["specs"])
-    specs_html = f'<h3>Dane techniczne</h3><table class="specs">{specs}</table>' if specs else ""
+    specs_html = f'<h3>Dane techniczne</h3><div class="specs-wrap"><table class="specs">{specs}</table></div>' if specs else ""
     gal = gallery_images(p["slug"])
     gallery_html = ('<div class="gallery">' + "".join(
         f'<a href="../img/{f}" target="_blank"><img src="{("../img/thumb/" + thumb_path(f)) if thumb_path(f) else ("../img/" + f)}" alt="{esc(p["name"])} — zdjęcie" loading="lazy" decoding="async"></a>'
@@ -1402,7 +1516,10 @@ def page_product(p):
         video_html += '<p class="note">Film produktowy SRP.</p>'
     is_manikin = p["slug"] in {c[0] for c in COMPARE_COLS}
     cmp_link = ('<p class="note" style="margin-top:14px">Nie wiesz, który model wybrać? '
-                '<a href="../porownanie-manekinow.html"><strong>Zobacz porównanie wszystkich manekinów →</strong></a></p>') if is_manikin else ""
+                '<a href="../porownanie-manekinow.html#dobor"><strong>Dobór w 3 pytaniach i porównanie manekinów →</strong></a></p>') if is_manikin else ""
+    karta = pliki_do_pobrania(f"karta-{p['slug']}")
+    karta_btn = (f'<a class="btn" href="../{karta.get("pl") or karta.get("en")}" download>Pobierz kartę katalogową (PDF)</a>' if karta else
+                 f'<a class="btn" href="../zapytanie-ofertowe.html?produkt={p["slug"]}&amp;karta=1">Poproś o kartę katalogową</a>')
     ceny = cennik_dla(p["slug"])
     cena_html = render_cena_produktu(p["slug"], ceny)
     offers = ""
@@ -1421,23 +1538,27 @@ def page_product(p):
 <section style="padding-top:20px">
   <div class="wrap prod-grid">
     <div>
-      {pic(p["slug"], p["name"], depth=1)}
+      {pic(p["slug"], p["name"], depth=1, eager=True)}
       {gallery_html}
       {video_html}
     </div>
     <div>
       <h1 class="disp" style="font-size:clamp(30px,4vw,44px)">{esc(p["name"])}</h1>
       <p class="lead" style="margin-top:12px">{esc(p["short"])}</p>
-      <h3 style="margin-top:26px">Najważniejsze cechy</h3>
+      {cena_html}
+      <div class="prod-facts"><span>✓ {"Gwarancja 12 miesięcy" if is_manikin or "manekin" in p["slug"] else "Gwarancja producenta"}</span>
+      <span>✓ Serwis i części w Polsce</span><span>✓ Ręczna produkcja w Szwecji — realizacja typowo kilka tygodni</span></div>
+      <div class="prod-actions">
+      <a class="btn solid" href="../zapytanie-ofertowe.html?produkt={p["slug"]}">Zapytaj o ofertę <span class="arr">→</span></a>
+      <a class="btn" href="../zapytanie-ofertowe.html?rozmowa=1&amp;produkt={p["slug"]}">Umów rozmowę o produkcie <span class="arr">→</span></a>
+      {karta_btn}</div>
+      <h3 style="margin-top:30px">Najważniejsze cechy</h3>
       <ul class="feat">{feats}</ul>
       {specs_html}
       <div class="usebox"><strong>Zastosowanie:</strong> {esc(p["use"])}</div>
-      {cena_html}
-      <a class="btn solid" href="../zapytanie-ofertowe.html">Zapytaj o ofertę <span class="arr">→</span></a>
-      &nbsp; {btn("../zapytanie-ofertowe.html?rozmowa=1", "Umów rozmowę o produkcie")}
       {cmp_link}
-      <p class="note">Do produktu dołączamy: kartę katalogową PDF, dokumenty do postępowań (certyfikaty,
-      deklaracje) oraz opcjonalne szkolenie wdrożeniowe — <a href="../do-pobrania.html">zobacz materiały do pobrania</a>.</p>
+      <p class="note">Do oferty dołączamy dokumenty do postępowań (certyfikaty, deklaracje) i na życzenie
+      szkolenie wdrożeniowe — <a href="../do-pobrania.html">zobacz materiały do pobrania</a>.</p>
     </div>
   </div>
 </section>
@@ -1521,48 +1642,92 @@ i mają charakter informacyjny; wiążące warunki zawiera każdorazowo oferta l
     return head("Warunki zakupu, dostawa i gwarancja") + body + footer()
 
 def page_quote():
+    names = {p["slug"]: p["name"] for p in PRODUCTS}
     prods = "\n".join(f'<label><input type="checkbox" name="products" value="{p["slug"]}"> {esc(p["name"])}</label>' for p in PRODUCTS)
     body = f"""
-<div class="page-head"><div class="wrap"><h1>Zapytanie ofertowe</h1>
-<p>Wypełnij formularz — przygotujemy wycenę z aktualną dostępnością, terminem dostawy i wariantami
+<div class="page-head"><div class="wrap">
+<h1><span class="tylko-pelny">Zapytanie ofertowe</span><span class="quote-only">Umów rozmowę o produkcie</span></h1>
+<p class="tylko-pelny">Wypełnij formularz — przygotujemy wycenę z aktualną dostępnością, terminem dostawy i wariantami
 finansowania. Odpowiadamy zwykle w ciągu jednego dnia roboczego. Przygotowujemy również kompletną
-dokumentację do zamówień publicznych.</p></div></div>
+dokumentację do zamówień publicznych.</p>
+<p class="quote-only">Zostaw imię i e-mail albo telefon — odezwiemy się w ciągu jednego dnia roboczego i ustalimy
+termin 30-minutowej rozmowy (online lub telefonicznie). Pilne? Zadzwoń: <a href="{TEL_HREF}" style="color:#fff">{PHONE}</a>.</p>
+</div></div>
 <section><div class="wrap">
-<form {form_attrs} style="max-width:820px">
+<form {form_attrs} id="zapytanie" data-check="srpCheck" style="max-width:820px">
   <div class="hp" aria-hidden="true"><label>Strona www <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
   <div class="grid2" style="gap:16px;align-items:start">
-    <label>Imię i nazwisko <input name="name" required></label>
-    <label>Organizacja / jednostka <input name="org"></label>
-    <label>E-mail służbowy <input type="email" name="email" required></label>
-    <label>Telefon <input type="tel" name="phone"></label>
-    <label>NIP (do oferty) <input name="nip"></label>
-    <label>Rodzaj organizacji
-      <select name="type"><option>— wybierz —</option><option>Straż pożarna (PSP/OSP)</option>
-      <option>Wojsko / obrona</option><option>Ratownictwo medyczne / szpital</option>
-      <option>Ratownictwo wodne</option><option>Przemysł / BHP</option>
-      <option>Uczelnia / ośrodek szkoleniowy</option><option>Inna</option></select></label>
+    <label>Imię i nazwisko <input name="name" autocomplete="name" required></label>
+    <label>E-mail służbowy <input type="email" name="email" autocomplete="email" required></label>
+    <label>Telefon <input type="tel" name="phone" autocomplete="tel"></label>
   </div>
-  <fieldset style="border:1px solid var(--line);padding:16px 20px">
-    <legend style="font-weight:700;padding:0 8px">Interesujące produkty (zaznacz dowolne)</legend>
-    <div class="checks">{prods}
-      <label><input type="checkbox" name="products" value="szkolenie"> Szkolenie / kurs</label>
+  <p class="note quote-only" id="kontakt-info">Wystarczy e-mail <strong>albo</strong> telefon.</p>
+  <details class="more" id="szczegoly" open>
+    <summary>Szczegóły zapytania <span class="quote-only">(opcjonalnie)</span></summary>
+    <div class="inner">
+      <div class="grid2" style="gap:16px;align-items:start">
+        <label>Organizacja / jednostka <input name="org" autocomplete="organization"></label>
+        <label>NIP (do oferty) <input name="nip" autocomplete="off" inputmode="numeric"></label>
+        <label>Rodzaj organizacji
+          <select name="type"><option>— wybierz —</option><option>Straż pożarna (PSP/OSP)</option>
+          <option>Wojsko / obrona</option><option>Ratownictwo medyczne / szpital</option>
+          <option>Ratownictwo wodne</option><option>Przemysł / BHP</option>
+          <option>Uczelnia / ośrodek szkoleniowy</option><option>Inna</option></select></label>
+      </div>
+      <details class="more" id="produkty-lista">
+        <summary>Interesujące produkty <span id="produkty-ile" class="note"></span></summary>
+        <div class="checks inner">{prods}
+          <label><input type="checkbox" name="products" value="szkolenie"> Szkolenie / kurs</label>
+        </div>
+      </details>
+      <div class="checks">
+        <label><input type="checkbox" name="demo"> Chcę umówić <strong>rozmowę o produkcie</strong> (30 min, online lub telefon)</label>
+        <label><input type="checkbox" name="pokaz_zywo"> Interesuje mnie <strong>pokaz na żywo</strong>, gdy egzemplarz demonstracyjny będzie dostępny</label>
+        <label><input type="checkbox" name="tender"> Zapytanie dotyczy <strong>postępowania przetargowego</strong></label>
+        <label><input type="checkbox" name="financing"> Interesuje mnie <strong>leasing / najem / raty</strong></label>
+        <label><input type="checkbox" name="training"> Poproszę o wycenę <strong>pakietu ze szkoleniem wdrożeniowym</strong></label>
+      </div>
     </div>
-  </fieldset>
-  <div class="checks">
-    <label><input type="checkbox" name="demo"> Chcę umówić <strong>rozmowę o produkcie</strong> (30 min, online lub telefon)</label>
-    <label><input type="checkbox" name="pokaz_zywo"> Interesuje mnie <strong>pokaz na żywo</strong>, gdy egzemplarz demonstracyjny będzie dostępny</label>
-    <label><input type="checkbox" name="tender"> Zapytanie dotyczy <strong>postępowania przetargowego</strong></label>
-    <label><input type="checkbox" name="financing"> Interesuje mnie <strong>leasing / najem / raty</strong></label>
-    <label><input type="checkbox" name="training"> Poproszę o wycenę <strong>pakietu ze szkoleniem wdrożeniowym</strong></label>
-  </div>
-  <label>Wiadomość (ilości, konfiguracja — np. masa manekina, planowany termin)
+  </details>
+  <label>Wiadomość <span class="tylko-pelny" style="font-weight:400">(ilości, konfiguracja — np. masa manekina, planowany termin)</span>
     <textarea name="msg" rows="6"></textarea></label>
-  <button class="btn" type="submit">Wyślij zapytanie <span class="arr">→</span></button>
+  {CAPTCHA_WIDGET}
+  <button class="btn" type="submit">Wyślij <span class="arr">→</span></button>
   <p class="note">{FORM_NOTE}</p>
 </form>
 </div></section>
+<script>
+(function(){{
+  var NAZWY={json.dumps(names, ensure_ascii=False)};
+  var q=new URLSearchParams(location.search), f=document.getElementById('zapytanie'); if(!f) return;
+  var email=f.querySelector('[name=email]'), phone=f.querySelector('[name=phone]'), msg=f.querySelector('[name=msg]');
+  var lista=document.getElementById('produkty-lista'), ile=document.getElementById('produkty-ile');
+  function licz(){{ var n=f.querySelectorAll('[name=products]:checked').length; ile.textContent=n?'— zaznaczono: '+n:'(zaznacz dowolne)'; }}
+  f.querySelectorAll('[name=products]').forEach(function(c){{ c.addEventListener('change',licz); }});
+  var slug=q.get('produkt');
+  if(slug){{ var c=f.querySelector('[name=products][value="'+slug.replace(/[^a-z0-9-]/g,'')+'"]'); if(c){{ c.checked=true; lista.open=true; }} }}
+  if(q.get('karta')==='1' && NAZWY[slug]) msg.value='Proszę o kartę katalogową (PDF): '+NAZWY[slug]+'.';
+  if(q.get('rozmowa')==='1'){{
+    document.documentElement.classList.add('rozmowa');
+    f.querySelector('[name=demo]').checked=true;
+    document.getElementById('szczegoly').open=false;
+    email.required=false; email.closest('label').firstChild.textContent='E-mail ';
+    msg.placeholder='Co chcecie ćwiczyć? (np. ewakuacja w dymie, krwotoki, RKO)';
+    f.querySelector('button[type=submit]').innerHTML='Umów rozmowę <span class="arr">→</span>';
+  }}
+  licz();
+  /* tryb rozmowy: wymagany e-mail ALBO telefon */
+  window.srpCheck=function(form){{
+    if(!document.documentElement.classList.contains('rozmowa')) return true;
+    if(email.value.trim()||phone.value.trim()){{ phone.setCustomValidity(''); return true; }}
+    phone.setCustomValidity('Podaj e-mail albo telefon.'); phone.reportValidity();
+    phone.addEventListener('input',function(){{ phone.setCustomValidity(''); }},{{once:true}});
+    return false;
+  }};
+}})();
+</script>
 """
-    return head("Wycena manekinów ratowniczych i szkoleń") + body + footer()
+    return head("Wycena manekinów ratowniczych i szkoleń", captcha=True) + body + footer(cta=False)
 
 def page_about():
     body = f"""
@@ -1587,8 +1752,8 @@ def page_about():
     <span class="badge">Dystrybutor</span>
     <h2>{BRAND}</h2>
     <p class="lead">Jesteśmy wyłącznym dystrybutorem produktów SRP na rynku polskim. Zapewniamy pełną
-    obsługę w języku polskim: doradztwo w doborze sprzętu do scenariuszy ćwiczeń, bezpłatne pokazy
-    w siedzibie klienta, wsparcie zamówień publicznych, serwis i części oraz szkolenia z użyciem
+    obsługę w języku polskim: doradztwo w doborze sprzętu do scenariuszy ćwiczeń, rozmowy o produkcie
+    i pokazy na zapytanie, wsparcie zamówień publicznych, serwis i części oraz szkolenia z użyciem
     dostarczanego sprzętu.</p>
     <p class="lead" style="margin-top:14px">Współpracujemy bezpośrednio z producentem w Szwecji, dzięki
     czemu oferujemy pełną konfigurowalność produktów — od niestandardowych mas manekinów po dobór
@@ -1606,7 +1771,8 @@ def page_news():
   <div class="grid3">
   <div class="card">{pic("home-05.jpg", "Produkty SRP", thumb=True)}<div class="body"><h3>Produkty SRP oficjalnie w Polsce</h3>
   <p>Rozpoczynamy oficjalną, wyłączną dystrybucję szwedzkich manekinów ratowniczych i symulatorów ran
-  SRP na rynku polskim. Zapraszamy jednostki i ośrodki szkoleniowe na bezpłatne pokazy sprzętu.</p>
+  SRP na rynku polskim. Zapraszamy jednostki i ośrodki szkoleniowe na rozmowę o produkcie — online lub
+  telefonicznie; pokaz na żywo organizujemy na zapytanie, gdy egzemplarz demonstracyjny jest dostępny.</p>
   {btn("zapytanie-ofertowe.html?rozmowa=1", "Umów rozmowę o produkcie")}</div></div>
   </div>
   <p class="lead" style="margin-top:34px">Tu będą pojawiać się informacje o targach, pokazach,
@@ -1624,23 +1790,27 @@ def page_contact():
     <h3>{BRAND}</h3>
     <p>{DISTRIBUTOR}</p>
     <p style="margin-top:12px">{DANE_REJESTROWE}</p>
-    <p style="margin-top:14px"><strong>Telefon:</strong> <a href="tel:{PHONE.replace(' ', '')}">{PHONE}</a><br>
+    <p style="margin-top:14px"><strong>Telefon:</strong> <a href="{TEL_HREF}">{PHONE}</a><br>
     <strong>E-mail:</strong> <a href="mailto:{EMAIL}">{EMAIL}</a></p>
+    <div class="contact-quick"><a class="btn solid" href="{TEL_HREF}">Zadzwoń</a>
+    <a class="btn wa" href="{WA_HREF}" target="_blank" rel="noopener">Napisz na WhatsApp</a></div>
+    <p class="note" style="margin-top:12px">Na wiadomości i zapytania odpowiadamy zwykle w ciągu jednego dnia roboczego.</p>
     <h3 style="margin-top:30px">Producent</h3>
     <p>Svenska Räddningsprodukter AB<br>Bergslagsgatan 1F, SE-733 31 Sala, Szwecja</p>
   </div>
   <form {form_attrs}>
   <div class="hp" aria-hidden="true"><label>Strona www <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
-    <label>Imię i nazwisko <input name="name" required></label>
-    <label>E-mail <input type="email" name="email" required></label>
-    <label>Telefon <input type="tel" name="phone"></label>
+    <label>Imię i nazwisko <input name="name" autocomplete="name" required></label>
+    <label>E-mail <input type="email" name="email" autocomplete="email" required></label>
+    <label>Telefon <input type="tel" name="phone" autocomplete="tel"></label>
     <label>Wiadomość <textarea name="msg" rows="6" required></textarea></label>
+    {CAPTCHA_WIDGET}
     <button class="btn" type="submit">Wyślij <span class="arr">→</span></button>
     <p class="note">{FORM_NOTE}</p>
   </form>
 </div></section>
 """
-    return head("Kontakt — dystrybutor manekinów SRP") + body + footer()
+    return head("Kontakt — dystrybutor manekinów SRP", captcha=True) + body + footer(cta=False)
 
 def page_segments():
     by_slug = {p["slug"]: p for p in PRODUCTS}
@@ -1677,10 +1847,33 @@ def page_compare():
     links = "<tr><th>Karta produktu</th>" + "".join(
         f'<td><a href="produkty/{sl}.html"><strong>Zobacz →</strong></a></td>' for sl, _ in COMPARE_COLS) + "</tr>"
     body = f"""
-<div class="page-head"><div class="wrap"><h1>Porównanie manekinów</h1>
+<div class="page-head"><div class="wrap"><h1>Dobór i porównanie manekinów</h1>
 <p>Wszystkie manekiny lądowe SRP w jednej tabeli — od podstawowej ewakuacji po pełną medycynę
 taktyczną. Jeśli potrzebujesz pomocy w doborze, po prostu opisz nam swoje scenariusze ćwiczeń.</p></div></div>
 <section><div class="wrap">
+  <div class="picker" id="dobor">
+    <span class="badge">Dobór w 3 pytaniach</span>
+    <h2>Który manekin wybrać?</h2>
+    <p class="note">Zaznacz odpowiedzi — pokażemy 1–2 modele z ceną. To podpowiedź; ostateczny dobór
+    zrobimy razem w rozmowie o Waszych scenariuszach.</p>
+    <fieldset><legend>1. Co chcecie ćwiczyć przede wszystkim?</legend><div class="opts">
+      <label><input type="radio" name="cel" value="ewak" checked> Ewakuacja, przeszukiwanie, transport</label>
+      <label><input type="radio" name="cel" value="krew"> Krwotoki i urazy</label>
+      <label><input type="radio" name="cel" value="dog"> Drogi oddechowe + krwotoki</label>
+      <label><input type="radio" name="cel" value="rko"> Resuscytacja (RKO, AED)</label>
+    </div></fieldset>
+    <fieldset><legend>2. Gdzie?</legend><div class="opts">
+      <label><input type="radio" name="gdzie" value="lad" checked> Budynki, dym, ogień</label>
+      <label><input type="radio" name="gdzie" value="teren"> Teren, pole walki</label>
+      <label><input type="radio" name="gdzie" value="woda"> Woda, lód</label>
+    </div></fieldset>
+    <fieldset><legend>3. Budżet na jeden manekin (brutto)?</legend><div class="opts">
+      <label><input type="radio" name="bud" value="1"> do 15 000 zł</label>
+      <label><input type="radio" name="bud" value="2"> do 30 000 zł</label>
+      <label><input type="radio" name="bud" value="3" checked> bez sztywnego limitu</label>
+    </div></fieldset>
+    <div class="picker-out" aria-live="polite"></div>
+  </div>
   <div class="cmp-scroll"><table class="cmp"><thead>{thead}</thead><tbody>{rows}{links}</tbody></table></div>
   <p class="note" style="margin-top:16px">Do ćwiczeń w wodzie zobacz osobno:
   <a href="produkty/manekiny-ratownictwa-wodnego.html">manekiny do ratownictwa wodnego</a> oraz
@@ -1688,7 +1881,41 @@ taktyczną. Jeśli potrzebujesz pomocy w doborze, po prostu opisz nam swoje scen
   <div style="margin-top:26px"><a class="btn solid" href="zapytanie-ofertowe.html">Poproś o wycenę wybranych modeli <span class="arr">→</span></a></div>
 </div></section>
 """
-    return head("Porównanie manekinów ratowniczych") + body + footer()
+    dane = {p["slug"]: {"n": p["name"], "s": p["short"],
+                         "c": (cena_pln(min(x["brutto"] for x in cennik_dla(p["slug"]))) if cennik_dla(p["slug"]) else "")}
+            for p in PRODUCTS}
+    js = """<script>
+(function(){
+  var P=%s, box=document.getElementById('dobor'); if(!box) return;
+  var out=box.querySelector('.picker-out');
+  function v(n){ var e=box.querySelector('input[name='+n+']:checked'); return e?e.value:''; }
+  function wybierz(cel,gdzie,bud){
+    if(gdzie==='woda') return cel==='rko'||cel==='dog' ? ['manekin-wodny-rko','manekiny-ratownictwa-wodnego'] : ['manekiny-ratownictwa-wodnego','manekin-wodny-rko'];
+    if(cel==='rko') return ['manekin-rko','manekin-standard'];
+    if(cel==='ewak') return gdzie==='teren' ? ['manekin-pro','manekin-standard'] : ['manekin-standard','manekin-bariatryczny'];
+    if(cel==='krew'){
+      if(bud==='1') return ['manekin-pro','symulatory-ran'];
+      if(bud==='2') return gdzie==='teren' ? ['manekin-pro-military','manekin-pro'] : ['manekin-pro','manekin-pro-military'];
+      return gdzie==='teren' ? ['manekin-pro-elite-military','manekin-pro-military'] : ['manekin-pro-elite','manekin-pro'];
+    }
+    /* drogi oddechowe + krwotoki */
+    if(bud==='1'||bud==='2') return ['manekin-pro','manekin-pro-elite'];
+    return gdzie==='teren' ? ['manekin-pro-elite-military','manekin-pro-elite'] : ['manekin-pro-elite','manekin-pro-elite-military'];
+  }
+  function pokaz(){
+    var lista=wybierz(v('cel'),v('gdzie'),v('bud')), dop=(v('cel')==='dog'&&v('bud')!=='3');
+    out.innerHTML=lista.map(function(s,i){ var p=P[s]; if(!p) return '';
+      return '<div class="pick"><span class="note">'+(i?'Alternatywa':'Polecamy')+'</span><h3>'+p.n+'</h3><p>'+p.s+'</p>'
+        +(i===0&&dop&&s==='manekin-pro'?'<p><strong>W tym budżecie:</strong> PRO z opcjonalnym adapterem dróg oddechowych; pełny symulator dróg oddechowych ma PRO ELITE.</p>':'')
+        +(p.c?'<p class="price-from">od <b>'+p.c+'</b> brutto</p>':'<p class="price-from">cena na zapytanie</p>')
+        +'<div class="row"><a class="btn solid" href="zapytanie-ofertowe.html?produkt='+s+'">Zapytaj o ofertę</a>'
+        +'<a class="btn" href="produkty/'+s+'.html">Zobacz produkt</a></div></div>';
+    }).join('');
+  }
+  box.addEventListener('change',pokaz); pokaz();
+})();
+</script>""" % json.dumps(dane, ensure_ascii=False)
+    return head("Porównanie manekinów ratowniczych") + body + js + footer()
 
 def page_tenders():
     body = f"""
@@ -1745,19 +1972,20 @@ def pliki_do_pobrania(baza):
             out[lang] = "pliki/" + f
     return out
 
-def dl_row(tytul, baza):
+def dl_row(tytul, baza, slug=None):
     """Wiersz listy pobrań: przycisk tylko dla istniejącego pliku, inaczej uczciwy stan „w przygotowaniu”."""
     pliki = pliki_do_pobrania(baza)
     if pliki:
         meta = "PDF · " + " / ".join(l.upper() for l in pliki)
         btns = "".join(f'<a class="btn" href="{u}" download>Pobierz ({l.upper()})</a>' for l, u in pliki.items())
     else:
-        meta = f'W przygotowaniu — wysyłamy na życzenie: <a href="mailto:{EMAIL}">{EMAIL}</a>'
-        btns = ""
+        meta = f'PDF wysyłamy na życzenie — zwykle w ciągu jednego dnia roboczego'
+        btns = (f'<a class="btn" href="zapytanie-ofertowe.html?produkt={slug}&amp;karta=1">Poproś o kartę</a>' if slug else
+                f'<a class="btn" href="mailto:{EMAIL}?subject={esc(tytul).replace(" ", "%20")}">Poproś e-mailem</a>')
     return f'<div class="dl"><div><strong>{esc(tytul)}</strong><div class="meta">{meta}</div></div>{btns}</div>'
 
 def page_downloads():
-    items = "\n".join(dl_row(f"Karta katalogowa — {p['name']}", f"karta-{p['slug']}") for p in PRODUCTS)
+    items = "\n".join(dl_row(f"Karta katalogowa — {p['name']}", f"karta-{p['slug']}", p["slug"]) for p in PRODUCTS)
     docs = "\n".join(dl_row(t, b) for t, b in DOKUMENTY_DO_POBRANIA)
     body = f"""
 <div class="page-head"><div class="wrap"><h1>Do pobrania</h1>
@@ -1815,14 +2043,15 @@ jak dobierać sprzęt, projektować ćwiczenia i budować kompetencje zespołu.<
   maksymalnie raz w miesiącu.</p>
   <form {form_attrs} style="display:flex;flex-wrap:wrap;gap:12px;max-width:560px;margin-top:18px">
   <div class="hp" aria-hidden="true"><label>Strona www <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
-    <input type="email" name="email" placeholder="Twój adres e-mail" required>
+    <input type="email" name="email" placeholder="Twój adres e-mail" autocomplete="email" required>
     <button class="btn solid" type="submit">Zapisz się</button>
   <input type="hidden" name="typ" value="newsletter">
   <label class="consent"><input type="checkbox" name="zgoda_marketing" required> <span>Chcę otrzymywać materiały i informacje o produktach oraz szkoleniach na podany adres e-mail. Zgodę mogę wycofać w każdej chwili, a jej brak nie wpływa na możliwość kontaktu z nami. <a href="/polityka-prywatnosci.html">Informacja o przetwarzaniu danych</a>.</span></label>
+  {CAPTCHA_WIDGET}
   </form>
 </div></section>
 """
-    return head("Dobór sprzętu i scenariusze ćwiczeń", 1) + body + footer(1)
+    return head("Dobór sprzętu i scenariusze ćwiczeń", 1, captcha=True) + body + footer(1)
 
 def page_article(a):
     body = f"""
@@ -1840,6 +2069,12 @@ def page_article(a):
     return head(a.get("seo_title", a["title"]), 1, a.get("desc", a["lead"])) + body + footer(1)
 
 def page_privacy():
+    captcha_priv = (f'''<p style="margin-top:12px">Formularze chroni przed automatycznym spamem usługa {CAPTCHA_NAME}.
+  Podczas wypełniania formularza przetwarza ona dane techniczne przeglądarki i adres IP w celu odróżnienia ludzi od botów
+  (art. 6 ust. 1 lit. f RODO — prawnie uzasadniony interes: ochrona formularzy przed nadużyciami).</p>''' if CAPTCHA_KEY else "")
+    cookies = ("Strona nie używa plików cookies ani narzędzi śledzących." if CAPTCHA_PROVIDER != "recaptcha" or not CAPTCHA_KEY else
+               "Strona nie używa własnych plików cookies ani narzędzi śledzących. Na stronach z formularzem usługa Google "
+               "reCAPTCHA może zapisywać pliki cookies Google niezbędne do ochrony formularza przed botami.")
     body = f"""
 <div class="page-head"><div class="wrap"><h1>Polityka prywatności</h1>
 <p>Informacja o przetwarzaniu danych osobowych w serwisie srp-polska.pl. Wersja z {CENNIK.get("stan_na","2026-09-17")}.</p></div></div>
@@ -1866,12 +2101,13 @@ def page_privacy():
   prowadzoną w usłudze Google Workspace/Gmail (Google Ireland Ltd.). Nie sprzedajemy danych i nie przekazujemy ich
   do celów marketingowych osób trzecich. Zmiana listy odbiorców (np. system CRM, asystent AI na stronie) zostanie
   odnotowana w tej polityce przed uruchomieniem usługi.</p>
+  {captcha_priv}
   <h3 style="margin-top:26px">5. Twoje prawa</h3>
   <p>Masz prawo dostępu do danych, ich sprostowania, usunięcia, ograniczenia przetwarzania,
   przenoszenia, sprzeciwu oraz wniesienia skargi do Prezesa UODO. Wycofanie zgody nie wpływa
   na zgodność z prawem wcześniejszego przetwarzania.</p>
   <h3 style="margin-top:26px">6. Pliki cookies</h3>
-  <p>Strona nie używa plików cookies ani narzędzi śledzących. Czcionki są serwowane z naszego serwera,
+  <p>{cookies} Czcionki są serwowane z naszego serwera,
   bez połączeń z usługami firm trzecich. Filmy produktowe odtwarzamy z własnego serwera, bez osadzania odtwarzaczy
   zewnętrznych. Jeśli w przyszłości dodamy bezcookie'ową statystykę odwiedzin lub asystenta AI, opiszemy to
   w tym miejscu przed uruchomieniem.</p>

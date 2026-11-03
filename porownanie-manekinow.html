@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="img/srp-logo.svg">
 <meta property="og:title" content="Porównanie manekinów ratowniczych | SRP Polska">
 <meta property="og:description" content="Porównanie manekinów ratowniczych SRP: masa, materiał, funkcje RKO, praca w wodzie i ogniu. Tabela pomaga wybrać model do Waszych ćwiczeń.">
-<meta property="og:image" content="https://srp-polska.pl/img/home-01.jpg">
+<meta property="og:image" content="https://srp-polska.pl/img/home-02.jpg">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="pl_PL">
 <meta name="twitter:card" content="summary_large_image">
@@ -20,25 +20,49 @@
 <header class="topbar">
   <div class="wrap nav-wrap">
     <a class="logo" href="index.html"><img class="logo-img" src="img/srp-logo.svg" alt="SRP — Svenska Räddningsprodukter"></a>
-    <input type="checkbox" id="nav-toggle" hidden><label for="nav-toggle" class="burger" aria-label="Menu">☰</label>
-    <nav>
+    <button type="button" class="burger" aria-label="Otwórz menu" aria-expanded="false" aria-controls="menu-glowne"><span aria-hidden="true">☰</span></button>
+    <nav id="menu-glowne">
       <a href="produkty/index.html">Produkty</a>
+      <a href="cennik.html">Cennik</a>
       <a href="dla-kogo.html">Dla kogo</a>
       <a href="szkolenia.html">Szkolenia</a>
-      <a href="index.html#meldunek">Meldunek</a>
       <a href="zamowienia-publiczne.html">Przetargi</a>
       <a href="wiedza/index.html">Wiedza</a>
       <a href="o-nas.html">O nas</a>
       <a href="kontakt.html">Kontakt</a>
+      <a class="nav-tel" href="tel:+48660408679">+48 660 408 679</a>
       <a class="nav-cta" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę / wycena</a>
     </nav>
   </div>
 </header>
 
-<div class="page-head"><div class="wrap"><h1>Porównanie manekinów</h1>
+<div class="page-head"><div class="wrap"><h1>Dobór i porównanie manekinów</h1>
 <p>Wszystkie manekiny lądowe SRP w jednej tabeli — od podstawowej ewakuacji po pełną medycynę
 taktyczną. Jeśli potrzebujesz pomocy w doborze, po prostu opisz nam swoje scenariusze ćwiczeń.</p></div></div>
 <section><div class="wrap">
+  <div class="picker" id="dobor">
+    <span class="badge">Dobór w 3 pytaniach</span>
+    <h2>Który manekin wybrać?</h2>
+    <p class="note">Zaznacz odpowiedzi — pokażemy 1–2 modele z ceną. To podpowiedź; ostateczny dobór
+    zrobimy razem w rozmowie o Waszych scenariuszach.</p>
+    <fieldset><legend>1. Co chcecie ćwiczyć przede wszystkim?</legend><div class="opts">
+      <label><input type="radio" name="cel" value="ewak" checked> Ewakuacja, przeszukiwanie, transport</label>
+      <label><input type="radio" name="cel" value="krew"> Krwotoki i urazy</label>
+      <label><input type="radio" name="cel" value="dog"> Drogi oddechowe + krwotoki</label>
+      <label><input type="radio" name="cel" value="rko"> Resuscytacja (RKO, AED)</label>
+    </div></fieldset>
+    <fieldset><legend>2. Gdzie?</legend><div class="opts">
+      <label><input type="radio" name="gdzie" value="lad" checked> Budynki, dym, ogień</label>
+      <label><input type="radio" name="gdzie" value="teren"> Teren, pole walki</label>
+      <label><input type="radio" name="gdzie" value="woda"> Woda, lód</label>
+    </div></fieldset>
+    <fieldset><legend>3. Budżet na jeden manekin (brutto)?</legend><div class="opts">
+      <label><input type="radio" name="bud" value="1"> do 15 000 zł</label>
+      <label><input type="radio" name="bud" value="2"> do 30 000 zł</label>
+      <label><input type="radio" name="bud" value="3" checked> bez sztywnego limitu</label>
+    </div></fieldset>
+    <div class="picker-out" aria-live="polite"></div>
+  </div>
   <div class="cmp-scroll"><table class="cmp"><thead><tr><th>Cecha</th><th>PRO ELITE MILITARY</th><th>PRO ELITE</th><th>PRO MILITARY</th><th>PRO</th><th>Standard</th><th>z funkcją RKO</th></tr></thead><tbody><tr><th>Wzrost</th><td>180 cm</td><td>180 cm</td><td>180 cm</td><td>180 cm</td><td>180 cm (dziecięcy 100 cm)</td><td>ok. 180 cm</td></tr>
 <tr><th>Masa</th><td>50–80 kg (40–90 na zam.)</td><td>50–80 kg (40–90 na zam.)</td><td>50–80 kg (40–90 na zam.)</td><td>50–80 kg (40–90 na zam.)</td><td>50–80 kg / dziecięcy 15 kg</td><td>ok. 45 kg</td></tr>
 <tr><th>Rany krwawiące (zewn. źródło krwi)</th><td>3 (amputacja, postrzał, cięta)</td><td>3 (złamanie uda, postrzał, cięta)</td><td>1 (amputacja urazowa)</td><td>1 (złamanie uda) + moduły opcjonalne</td><td>—</td><td>—</td></tr>
@@ -55,8 +79,39 @@ taktyczną. Jeśli potrzebujesz pomocy w doborze, po prostu opisz nam swoje scen
   <a href="produkty/manekin-wodny-rko.html">manekin wodny z funkcją RKO</a>.</p>
   <div style="margin-top:26px"><a class="btn solid" href="zapytanie-ofertowe.html">Poproś o wycenę wybranych modeli <span class="arr">→</span></a></div>
 </div></section>
-
-<footer>
+<script>
+(function(){
+  var P={"manekin-pro-elite-military": {"n": "Manekin ratowniczy PRO ELITE MILITARY", "s": "Najbardziej zaawansowany fantom taktyczny SRP — drogi oddechowe, tętno, dźwięki oddechu i trzy krwawiące rany do treningu TCCC.", "c": "70 100,00 zł"}, "manekin-pro-elite": {"n": "Manekin ratowniczy PRO ELITE", "s": "Zaawansowany fantom do treningu zabezpieczania dróg oddechowych i kontroli krwotoków, z dostępem donaczyniowym i głośnikiem scenariuszowym.", "c": "59 990,00 zł"}, "manekin-pro-military": {"n": "Manekin ratowniczy PRO MILITARY", "s": "Fantom pola walki z raną amputacyjną i masywnym krwotokiem — przygotowuje operatorów na realne obrażenia zanim zobaczą je naprawdę.", "c": "24 850,00 zł"}, "manekin-pro": {"n": "Manekin ratowniczy PRO", "s": "Uniwersalny fantom urazowy z otwartym złamaniem kości udowej — realistyczna masa, przeguby i opcjonalne moduły rozbudowy.", "c": "12 000,00 zł"}, "manekin-standard": {"n": "Manekin ratowniczy Standard", "s": "Klasyczny, niezwykle wytrzymały manekin ewakuacyjny do ćwiczeń w dymie, wysokiej temperaturze i na wodzie. Wersja dorosła i dziecięca.", "c": "4 340,00 zł"}, "symulatory-ran": {"n": "Symulatory ran", "s": "Bardzo realistyczne symulatory obrażeń do nauki kontroli krwotoków — staza, packing, opatrunek uciskowy. Jasny i ciemny odcień skóry.", "c": "2 450,00 zł"}, "manekin-rko": {"n": "Manekin ratowniczy z funkcją RKO", "s": "Fantom terenowy łączący realistyczną ewakuację z pełnowartościową resuscytacją — zgodny z systemem ShockLink™ do ćwiczeń z prawdziwym defibrylatorem.", "c": "8 120,00 zł"}, "manekin-wodny-rko": {"n": "Manekin do ratownictwa wodnego z funkcją RKO", "s": "Umożliwia wdechy ratownicze i uciśnięcia klatki piersiowej bezpośrednio w środowisku wodnym. Realistyczna pozycja pływania.", "c": "7 139,00 zł"}, "manekiny-ratownictwa-wodnego": {"n": "Manekiny do ratownictwa wodnego", "s": "Wariant pływający (dorosły) i tonący (dziecięcy) do ćwiczeń powierzchniowych, lodowych i nurkowych.", "c": ""}, "manekin-bariatryczny": {"n": "Manekin bariatryczny", "s": "Fantom o masie 100–160 kg do nauki technik podnoszenia i ewakuacji osób o dużej masie ciała.", "c": "14 900,00 zł"}, "manekiny-pozarowe": {"n": "Manekiny pożarowe", "s": "Manekiny i akcesoria do ćwiczeń gaszenia odzieży palącej się na człowieku — wielokrotnego użytku, bez substancji toksycznych.", "c": "2 539,00 zł"}, "symulacja-medyczna": {"n": "Symulacja medyczna", "s": "Trenażery procedur: wkłucia obwodowe i odbarczenie odmy prężnej.", "c": ""}, "pozostale-produkty": {"n": "Pozostałe produkty", "s": "Akcesoria i uzupełnienie oferty: krew symulacyjna, stazy, materiały do packingu, torby transportowe oraz produkty partnerów.", "c": "320,00 zł"}}, box=document.getElementById('dobor'); if(!box) return;
+  var out=box.querySelector('.picker-out');
+  function v(n){ var e=box.querySelector('input[name='+n+']:checked'); return e?e.value:''; }
+  function wybierz(cel,gdzie,bud){
+    if(gdzie==='woda') return cel==='rko'||cel==='dog' ? ['manekin-wodny-rko','manekiny-ratownictwa-wodnego'] : ['manekiny-ratownictwa-wodnego','manekin-wodny-rko'];
+    if(cel==='rko') return ['manekin-rko','manekin-standard'];
+    if(cel==='ewak') return gdzie==='teren' ? ['manekin-pro','manekin-standard'] : ['manekin-standard','manekin-bariatryczny'];
+    if(cel==='krew'){
+      if(bud==='1') return ['manekin-pro','symulatory-ran'];
+      if(bud==='2') return gdzie==='teren' ? ['manekin-pro-military','manekin-pro'] : ['manekin-pro','manekin-pro-military'];
+      return gdzie==='teren' ? ['manekin-pro-elite-military','manekin-pro-military'] : ['manekin-pro-elite','manekin-pro'];
+    }
+    /* drogi oddechowe + krwotoki */
+    if(bud==='1'||bud==='2') return ['manekin-pro','manekin-pro-elite'];
+    return gdzie==='teren' ? ['manekin-pro-elite-military','manekin-pro-elite'] : ['manekin-pro-elite','manekin-pro-elite-military'];
+  }
+  function pokaz(){
+    var lista=wybierz(v('cel'),v('gdzie'),v('bud')), dop=(v('cel')==='dog'&&v('bud')!=='3');
+    out.innerHTML=lista.map(function(s,i){ var p=P[s]; if(!p) return '';
+      return '<div class="pick"><span class="note">'+(i?'Alternatywa':'Polecamy')+'</span><h3>'+p.n+'</h3><p>'+p.s+'</p>'
+        +(i===0&&dop&&s==='manekin-pro'?'<p><strong>W tym budżecie:</strong> PRO z opcjonalnym adapterem dróg oddechowych; pełny symulator dróg oddechowych ma PRO ELITE.</p>':'')
+        +(p.c?'<p class="price-from">od <b>'+p.c+'</b> brutto</p>':'<p class="price-from">cena na zapytanie</p>')
+        +'<div class="row"><a class="btn solid" href="zapytanie-ofertowe.html?produkt='+s+'">Zapytaj o ofertę</a>'
+        +'<a class="btn" href="produkty/'+s+'.html">Zobacz produkt</a></div></div>';
+    }).join('');
+  }
+  box.addEventListener('change',pokaz); pokaz();
+})();
+</script>
+<div class="sticky-cta"><a href="tel:+48660408679" class="btn">Zadzwoń</a><a href="zapytanie-ofertowe.html" class="btn solid">Zapytaj o wycenę</a></div>
+<footer class="has-cta">
   <div class="wrap foot-grid">
     <div>
       <h4>SRP Polska</h4>
@@ -72,11 +127,11 @@ taktyczną. Jeśli potrzebujesz pomocy w doborze, po prostu opisz nam swoje scen
     </div>
     <div>
       <h4>Na skróty</h4>
-      <p><a href="produkty/index.html">Produkty</a><br>
+      <p class="links"><a href="produkty/index.html">Produkty</a><br>
       <a href="cennik.html">Cennik</a><br>
       <a href="porownanie-manekinow.html">Porównanie modeli</a><br>
       <a href="dla-kogo.html">Rozwiązania dla branż</a><br>
-      <a href="index.html#meldunek">Meldunek: fantomy w służbie</a><br>
+      
       <a href="zamowienia-publiczne.html">Zamówienia publiczne</a><br>
       <a href="do-pobrania.html">Do pobrania</a><br>
       <a href="wiedza/index.html">Strefa wiedzy</a><br>
@@ -91,25 +146,41 @@ taktyczną. Jeśli potrzebujesz pomocy w doborze, po prostu opisz nam swoje scen
   <div class="wrap copyright">© SRP Polska. Produkty SRP® są znakiem towarowym Svenska Räddningsprodukter AB. MADE IN SWEDEN.</div>
 </footer>
 <script>
+/* menu mobilne: przycisk z aria-expanded, ikona ☰ / ✕ */
+(function(){
+  var b=document.querySelector('.burger'), n=document.getElementById('menu-glowne'); if(!b||!n) return;
+  function set(open){ b.setAttribute('aria-expanded',open); b.setAttribute('aria-label',open?'Zamknij menu':'Otwórz menu');
+    b.firstElementChild.textContent=open?'✕':'☰'; n.classList.toggle('open',open); }
+  b.addEventListener('click',function(){ set(b.getAttribute('aria-expanded')!=='true'); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') set(false); });
+})();
 /* wysyłka formularzy do webhooka n8n (bez przeładowania strony) */
 (function(){
-  if(location.search.indexOf('rozmowa=1')>-1){ var d=document.querySelector('input[name=demo]'); if(d){ d.checked=true; var fm=d.closest('form'); if(fm) fm.scrollIntoView({block:'start'}); } }
+  var CAPTCHA='', PROV='';
+  function resetCaptcha(f){
+    var w=f.querySelector('.captcha'); if(!w) return;
+    try{ if(PROV==='turnstile'&&window.turnstile) turnstile.reset(w);
+         if(PROV==='recaptcha'&&window.grecaptcha) grecaptcha.reset(); }catch(e){}
+  }
   document.querySelectorAll('form[data-lead-form="1"]').forEach(function(f){
     f.addEventListener('submit', function(ev){
       ev.preventDefault();
+      if(f.dataset.check && window[f.dataset.check] && !window[f.dataset.check](f)) return;
       var btn=f.querySelector('button[type=submit]'), old=btn?btn.innerHTML:'';
-      if(btn){ btn.disabled=true; btn.innerHTML='Wysyłanie…'; }
       var fd=new FormData(f), data={};
       fd.forEach(function(v,k){ data[k]= data[k] ? [].concat(data[k],v) : v; });
       if(data.website){ f.innerHTML='<div class="form-ok"><strong>Dziękujemy.</strong></div>'; return; } /* pułapka na boty */
       delete data.website;
+      if(CAPTCHA && f.querySelector('.captcha') && !data[CAPTCHA]){
+        alert('Zaznacz potwierdzenie, że nie jesteś robotem (pole nad przyciskiem), i wyślij ponownie.'); return; }
+      if(btn){ btn.disabled=true; btn.innerHTML='Wysyłanie…'; }
       data._strona=location.pathname; data._czas=new Date().toISOString();
       fetch(f.action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
         .then(function(r){ if(!r.ok) throw 0;
           f.innerHTML = (data.typ==='newsletter')
             ? '<div class="form-ok"><strong>Dziękujemy — jesteś na liście.</strong><p>Materiały wysyłamy najwyżej raz w miesiącu. Zgodę możesz wycofać w każdej chwili.</p></div>'
-            : '<div class="form-ok"><strong>Dziękujemy — zapytanie dotarło.</strong><p>Odpowiadamy zwykle w ciągu jednego dnia roboczego.</p></div>'; })
-        .catch(function(){ if(btn){ btn.disabled=false; btn.innerHTML=old; }
+            : '<div class="form-ok" role="status"><strong>Dziękujemy — odezwiemy się w ciągu 1 dnia roboczego.</strong><p>Pilne? Zadzwoń: <a href="tel:+48660408679">+48 660 408 679</a>.</p></div>'; })
+        .catch(function(){ if(btn){ btn.disabled=false; btn.innerHTML=old; } resetCaptcha(f);
           alert('Nie udało się wysłać. Napisz na kontakt@srp-polska.pl lub zadzwoń: +48 660 408 679.'); });
     });
   });

@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="img/srp-logo.svg">
 <meta property="og:title" content="Manekiny dla straży, wojska i szpitali | SRP Polska">
 <meta property="og:description" content="Dobór manekinów treningowych dla straży pożarnej, wojska, ratownictwa medycznego i wodnego, szpitali i ośrodków szkoleniowych. Polecane modele SRP.">
-<meta property="og:image" content="https://srp-polska.pl/img/home-01.jpg">
+<meta property="og:image" content="https://srp-polska.pl/img/home-02.jpg">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="pl_PL">
 <meta name="twitter:card" content="summary_large_image">
@@ -20,16 +20,17 @@
 <header class="topbar">
   <div class="wrap nav-wrap">
     <a class="logo" href="index.html"><img class="logo-img" src="img/srp-logo.svg" alt="SRP — Svenska Räddningsprodukter"></a>
-    <input type="checkbox" id="nav-toggle" hidden><label for="nav-toggle" class="burger" aria-label="Menu">☰</label>
-    <nav>
+    <button type="button" class="burger" aria-label="Otwórz menu" aria-expanded="false" aria-controls="menu-glowne"><span aria-hidden="true">☰</span></button>
+    <nav id="menu-glowne">
       <a href="produkty/index.html">Produkty</a>
+      <a href="cennik.html">Cennik</a>
       <a href="dla-kogo.html">Dla kogo</a>
       <a href="szkolenia.html">Szkolenia</a>
-      <a href="index.html#meldunek">Meldunek</a>
       <a href="zamowienia-publiczne.html">Przetargi</a>
       <a href="wiedza/index.html">Wiedza</a>
       <a href="o-nas.html">O nas</a>
       <a href="kontakt.html">Kontakt</a>
+      <a class="nav-tel" href="tel:+48660408679">+48 660 408 679</a>
       <a class="nav-cta" href="zapytanie-ofertowe.html?rozmowa=1">Umów rozmowę / wycena</a>
     </nav>
   </div>
@@ -105,7 +106,8 @@ rozwiązania: co sprawdza się w Twojej służbie i od czego warto zacząć.</p>
   </div>
 </section>
 
-<footer>
+<div class="sticky-cta"><a href="tel:+48660408679" class="btn">Zadzwoń</a><a href="zapytanie-ofertowe.html" class="btn solid">Zapytaj o wycenę</a></div>
+<footer class="has-cta">
   <div class="wrap foot-grid">
     <div>
       <h4>SRP Polska</h4>
@@ -121,11 +123,11 @@ rozwiązania: co sprawdza się w Twojej służbie i od czego warto zacząć.</p>
     </div>
     <div>
       <h4>Na skróty</h4>
-      <p><a href="produkty/index.html">Produkty</a><br>
+      <p class="links"><a href="produkty/index.html">Produkty</a><br>
       <a href="cennik.html">Cennik</a><br>
       <a href="porownanie-manekinow.html">Porównanie modeli</a><br>
       <a href="dla-kogo.html">Rozwiązania dla branż</a><br>
-      <a href="index.html#meldunek">Meldunek: fantomy w służbie</a><br>
+      
       <a href="zamowienia-publiczne.html">Zamówienia publiczne</a><br>
       <a href="do-pobrania.html">Do pobrania</a><br>
       <a href="wiedza/index.html">Strefa wiedzy</a><br>
@@ -140,25 +142,41 @@ rozwiązania: co sprawdza się w Twojej służbie i od czego warto zacząć.</p>
   <div class="wrap copyright">© SRP Polska. Produkty SRP® są znakiem towarowym Svenska Räddningsprodukter AB. MADE IN SWEDEN.</div>
 </footer>
 <script>
+/* menu mobilne: przycisk z aria-expanded, ikona ☰ / ✕ */
+(function(){
+  var b=document.querySelector('.burger'), n=document.getElementById('menu-glowne'); if(!b||!n) return;
+  function set(open){ b.setAttribute('aria-expanded',open); b.setAttribute('aria-label',open?'Zamknij menu':'Otwórz menu');
+    b.firstElementChild.textContent=open?'✕':'☰'; n.classList.toggle('open',open); }
+  b.addEventListener('click',function(){ set(b.getAttribute('aria-expanded')!=='true'); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') set(false); });
+})();
 /* wysyłka formularzy do webhooka n8n (bez przeładowania strony) */
 (function(){
-  if(location.search.indexOf('rozmowa=1')>-1){ var d=document.querySelector('input[name=demo]'); if(d){ d.checked=true; var fm=d.closest('form'); if(fm) fm.scrollIntoView({block:'start'}); } }
+  var CAPTCHA='', PROV='';
+  function resetCaptcha(f){
+    var w=f.querySelector('.captcha'); if(!w) return;
+    try{ if(PROV==='turnstile'&&window.turnstile) turnstile.reset(w);
+         if(PROV==='recaptcha'&&window.grecaptcha) grecaptcha.reset(); }catch(e){}
+  }
   document.querySelectorAll('form[data-lead-form="1"]').forEach(function(f){
     f.addEventListener('submit', function(ev){
       ev.preventDefault();
+      if(f.dataset.check && window[f.dataset.check] && !window[f.dataset.check](f)) return;
       var btn=f.querySelector('button[type=submit]'), old=btn?btn.innerHTML:'';
-      if(btn){ btn.disabled=true; btn.innerHTML='Wysyłanie…'; }
       var fd=new FormData(f), data={};
       fd.forEach(function(v,k){ data[k]= data[k] ? [].concat(data[k],v) : v; });
       if(data.website){ f.innerHTML='<div class="form-ok"><strong>Dziękujemy.</strong></div>'; return; } /* pułapka na boty */
       delete data.website;
+      if(CAPTCHA && f.querySelector('.captcha') && !data[CAPTCHA]){
+        alert('Zaznacz potwierdzenie, że nie jesteś robotem (pole nad przyciskiem), i wyślij ponownie.'); return; }
+      if(btn){ btn.disabled=true; btn.innerHTML='Wysyłanie…'; }
       data._strona=location.pathname; data._czas=new Date().toISOString();
       fetch(f.action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
         .then(function(r){ if(!r.ok) throw 0;
           f.innerHTML = (data.typ==='newsletter')
             ? '<div class="form-ok"><strong>Dziękujemy — jesteś na liście.</strong><p>Materiały wysyłamy najwyżej raz w miesiącu. Zgodę możesz wycofać w każdej chwili.</p></div>'
-            : '<div class="form-ok"><strong>Dziękujemy — zapytanie dotarło.</strong><p>Odpowiadamy zwykle w ciągu jednego dnia roboczego.</p></div>'; })
-        .catch(function(){ if(btn){ btn.disabled=false; btn.innerHTML=old; }
+            : '<div class="form-ok" role="status"><strong>Dziękujemy — odezwiemy się w ciągu 1 dnia roboczego.</strong><p>Pilne? Zadzwoń: <a href="tel:+48660408679">+48 660 408 679</a>.</p></div>'; })
+        .catch(function(){ if(btn){ btn.disabled=false; btn.innerHTML=old; } resetCaptcha(f);
           alert('Nie udało się wysłać. Napisz na kontakt@srp-polska.pl lub zadzwoń: +48 660 408 679.'); });
     });
   });
