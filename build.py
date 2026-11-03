@@ -1800,6 +1800,8 @@ def page_contact():
     <p style="margin-top:12px">{DANE_REJESTROWE}</p>
     <p style="margin-top:14px"><strong>Telefon:</strong> <a href="{TEL_HREF}">{PHONE}</a><br>
     <strong>E-mail:</strong> <a href="mailto:{EMAIL}">{EMAIL}</a></p>
+    <p style="margin-top:14px"><strong>Jakub Koch</strong> — członek zarządu, doradztwo produktowe<br>
+    <strong>Telefon:</strong> <a href="tel:+48668159415">+48 668 159 415</a></p>
     <div class="contact-quick"><a class="btn solid" href="{TEL_HREF}">Zadzwoń</a>
     <a class="btn wa" href="{WA_HREF}" target="_blank" rel="noopener">Napisz na WhatsApp</a></div>
     <p class="note" style="margin-top:12px">Na wiadomości i zapytania odpowiadamy zwykle w ciągu jednego dnia roboczego.</p>
